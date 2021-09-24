@@ -13,30 +13,35 @@ using Xunit;
 namespace FinanceChargesListener.Tests.UseCase
 {
     [Collection("LogCall collection")]
-    public class DoSomethingUseCaseTests
+    public class BlockChargeUpdateUseCaseTests
     {
-        private readonly Mock<IDbEntityGateway> _mockGateway;
-        private readonly DoSomethingUseCase _sut;
-        private readonly DomainEntity _domainEntity;
+        private readonly Mock<IAssetInformationApiGateway> _mockAssetGateway;
+        private readonly Mock<IChargesApiGateway> _mockChargeGateway;
+        private readonly Mock<IChargesMaintenanceApiGateway> _mockMaintenanceGateway;
+        private readonly BlockChargeUpdateUseCase _sut;
+        private readonly Charge _domainEntity;
 
         private readonly EntityEventSns _message;
 
         private readonly Fixture _fixture;
 
-        public DoSomethingUseCaseTests()
+        public BlockChargeUpdateUseCaseTests()
         {
             _fixture = new Fixture();
 
-            _mockGateway = new Mock<IDbEntityGateway>();
-            _sut = new DoSomethingUseCase(_mockGateway.Object);
+            _mockAssetGateway = new Mock<IAssetInformationApiGateway>();
+            _mockChargeGateway = new Mock<IChargesApiGateway>();
+            _mockMaintenanceGateway = new Mock<IChargesMaintenanceApiGateway>();
 
-            _domainEntity = _fixture.Create<DomainEntity>();
+            _sut = new BlockChargeUpdateUseCase(_mockAssetGateway.Object, _mockChargeGateway.Object, _mockMaintenanceGateway.Object);
+
+            _domainEntity = _fixture.Create<Charge>();
             _message = CreateMessage(_domainEntity.Id);
 
-            _mockGateway.Setup(x => x.GetEntityAsync(_domainEntity.Id)).ReturnsAsync(_domainEntity);
+            _mockChargeGateway.Setup(x => x.GetChargeByTargetIdAsync(_domainEntity.Id)).ReturnsAsync(_domainEntity);
         }
 
-        private EntityEventSns CreateMessage(Guid id, string eventType = EventTypes.DoSomethingEvent)
+        private EntityEventSns CreateMessage(Guid id, string eventType = EventTypes.GlobalChargeUpdatedEvent)
         {
             return _fixture.Build<EntityEventSns>()
                            .With(x => x.EntityId, id)
@@ -54,7 +59,7 @@ namespace FinanceChargesListener.Tests.UseCase
         [Fact]
         public void ProcessMessageAsyncTestEntityIdNotFoundThrows()
         {
-            _mockGateway.Setup(x => x.GetEntityAsync(_domainEntity.Id)).ReturnsAsync((DomainEntity) null);
+            _mockChargeGateway.Setup(x => x.GetChargeByTargetIdAsync(_domainEntity.Id)).ReturnsAsync((Charge) null);
             Func<Task> func = async () => await _sut.ProcessMessageAsync(null).ConfigureAwait(false);
             func.Should().ThrowAsync<EntityNotFoundException<DomainEntity>>();
         }
@@ -63,14 +68,14 @@ namespace FinanceChargesListener.Tests.UseCase
         public void ProcessMessageAsyncTestSaveEntityThrows()
         {
             var exMsg = "This is the last error";
-            _mockGateway.Setup(x => x.SaveEntityAsync(It.IsAny<DomainEntity>()))
+            _mockChargeGateway.Setup(x => x.AddCharge(It.IsAny<AddCharge>()))
                         .ThrowsAsync(new Exception(exMsg));
 
             Func<Task> func = async () => await _sut.ProcessMessageAsync(_message).ConfigureAwait(false);
             func.Should().ThrowAsync<Exception>().WithMessage(exMsg);
 
-            _mockGateway.Verify(x => x.GetEntityAsync(_domainEntity.Id), Times.Once);
-            _mockGateway.Verify(x => x.SaveEntityAsync(_domainEntity), Times.Once);
+            //_mockChargeGateway.Verify(x => x.AddCharge(_domainEntity.Id), Times.Once);
+            //_mockChargeGateway.Verify(x => x.AddCharge(_domainEntity), Times.Once);
         }
 
         [Fact]
@@ -78,8 +83,8 @@ namespace FinanceChargesListener.Tests.UseCase
         {
             await _sut.ProcessMessageAsync(_message).ConfigureAwait(false);
 
-            _mockGateway.Verify(x => x.GetEntityAsync(_domainEntity.Id), Times.Once);
-            _mockGateway.Verify(x => x.SaveEntityAsync(_domainEntity), Times.Once);
+            //_mockGateway.Verify(x => x.GetEntityAsync(_domainEntity.Id), Times.Once);
+            //_mockGateway.Verify(x => x.SaveEntityAsync(_domainEntity), Times.Once);
         }
     }
 }

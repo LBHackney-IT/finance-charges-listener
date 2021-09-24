@@ -22,7 +22,7 @@ namespace FinanceChargesListener.Tests.E2ETests.Steps
         public BaseSteps()
         { }
 
-        protected SQSEvent.SQSMessage CreateMessage(Guid personId, string eventType = EventTypes.DoSomethingEvent)
+        protected SQSEvent.SQSMessage CreateMessage(Guid personId, string eventType = EventTypes.GlobalChargeUpdatedEvent)
         {
             var personSns = _fixture.Build<EntityEventSns>()
                                     .With(x => x.EntityId, personId)
@@ -50,7 +50,7 @@ namespace FinanceChargesListener.Tests.E2ETests.Steps
 
             Func<Task> func = async () =>
             {
-                var fn = new SqsFunction();
+                var fn = new ChargesListener();
                 await fn.FunctionHandler(sqsEvent, lambdaContext).ConfigureAwait(false);
             };
 

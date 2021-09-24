@@ -3,6 +3,7 @@ using Amazon.Lambda.SQSEvents;
 using FinanceChargesListener.Boundary;
 using FinanceChargesListener.Gateway;
 using FinanceChargesListener.Gateway.Interfaces;
+using FinanceChargesListener.Infrastructure;
 using FinanceChargesListener.UseCase;
 using FinanceChargesListener.UseCase.Interfaces;
 using Hackney.Core.DynamoDb;
@@ -23,14 +24,14 @@ namespace FinanceChargesListener
     /// Lambda function triggered by an SQS message
     /// </summary>
     [ExcludeFromCodeCoverage]
-    public class SqsFunction : BaseFunction
+    public class ChargesListener : BaseFunction
     {
         /// <summary>
         /// Default constructor. This constructor is used by Lambda to construct the instance. When invoked in a Lambda environment
         /// the AWS credentials will come from the IAM role associated with the function and the AWS region will be set to the
         /// region the Lambda function is executed in.
         /// </summary>
-        public SqsFunction()
+        public ChargesListener()
         { }
 
         /// <summary>
@@ -39,10 +40,16 @@ namespace FinanceChargesListener
         /// <param name="services"></param>
         protected override void ConfigureServices(IServiceCollection services)
         {
+            services.AddHttpClient();
+
+            services.AddScoped<IAssetInformationApiGateway, AssetInformationApiGateway>();
+            services.AddScoped<IChargesApiGateway, ChargesApiGateway>();
+            services.AddScoped<IChargesMaintenanceApiGateway, ChargesMaintenanceApiGateway>();
+
             services.ConfigureDynamoDB();
 
-            services.AddHttpClient();
-            services.AddScoped<IDoSomethingUseCase, DoSomethingUseCase>();
+            services.AddScoped<IGlobalChargeUpdateUseCase, GlobalChargeUpdateUseCase>();
+            services.AddScoped<IBlockChargeUpdateUseCase, BlockChargeUpdateUseCase>();
 
             services.AddScoped<IDbEntityGateway, DynamoDbEntityGateway>();
 
@@ -86,9 +93,14 @@ namespace FinanceChargesListener
                     IMessageProcessing processor = null;
                     switch (entityEvent.EventType)
                     {
-                        case EventTypes.DoSomethingEvent:
+                        case EventTypes.GlobalChargeUpdatedEvent:
                             {
-                                processor = ServiceProvider.GetService<IDoSomethingUseCase>();
+                                processor = ServiceProvider.GetService<IGlobalChargeUpdateUseCase>();
+                                break;
+                            }
+                        case EventTypes.BlockChargeUpdatedEvent:
+                            {
+                                processor = ServiceProvider.GetService<IBlockChargeUpdateUseCase>();
                                 break;
                             }
                         // TODO - Implement other message types here...
