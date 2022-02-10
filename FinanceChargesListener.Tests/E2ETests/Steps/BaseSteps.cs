@@ -22,7 +22,7 @@ namespace FinanceChargesListener.Tests.E2ETests.Steps
         public BaseSteps()
         { }
 
-        protected SQSEvent.SQSMessage CreateMessage(Guid personId, string eventType = EventTypes.GlobalChargeUpdatedEvent)
+        protected SQSEvent.SQSMessage CreateMessage(Guid personId, string eventType = EventTypes.HeadOfChargeApplyEvent)
         {
             var personSns = _fixture.Build<EntityEventSns>()
                                     .With(x => x.EntityId, personId)

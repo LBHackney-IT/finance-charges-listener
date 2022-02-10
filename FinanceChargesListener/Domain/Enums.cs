@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace FinanceChargesListener.Domain
@@ -7,29 +8,52 @@ namespace FinanceChargesListener.Domain
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public enum TargetType
         {
-            asset,
-            tenure,
-            block,
-            estate
+            Block,
+            Concierge,
+            Dwelling,
+            LettableNonDwelling,
+            MediumRiseBlock,
+            NA,
+            TravellerSite,
+            AdministrativeBuilding,
+            BoilerHouse,
+            BoosterPump,
+            CleanersFacilities,
+            CombinedHeatAndPowerUnit,
+            CommunityHall,
+            Estate,
+            HighRiseBlock,
+            Lift,
+            LowRiseBlock,
+            NBD,
+            OutBuilding,
+            TerracedBlock,
+            WalkUpBlock
         }
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public enum ChargeMaintenanceStatus
         {
-            pending,
-            applied
+            Pending,
+            Applied
         }
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public enum ChargeType
         {
-            estate,
-            block,
-            property
+            Estate,
+            Block,
+            Property
         }
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public enum ChargeGroup
         {
-            tenants,
-            leaseholders
+            Tenants,
+            Leaseholders
+        }
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public enum ChargeFrequency
+        {
+            Monthly,
+            Weekly
         }
     }
 }

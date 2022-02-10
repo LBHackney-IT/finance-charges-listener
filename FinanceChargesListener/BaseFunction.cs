@@ -22,7 +22,7 @@ namespace FinanceChargesListener
     [ExcludeFromCodeCoverage]
     public abstract class BaseFunction
     {
-        protected readonly static JsonSerializerOptions _jsonOptions = JsonOptions.CreateJsonOptions();
+        protected readonly static JsonSerializerOptions JsonOptions = Infrastructure.JsonOptions.CreateJsonOptions();
 
         protected IConfigurationRoot Configuration { get; }
         protected IServiceProvider ServiceProvider { get; }

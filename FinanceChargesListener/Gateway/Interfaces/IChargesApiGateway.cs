@@ -1,13 +1,14 @@
 using FinanceChargesListener.Domain;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace FinanceChargesListener.Gateway.Interfaces
 {
-    public interface IChargesApiGateway
+    public interface ChargesApiGateway
     {
-        Task<Charge> GetChargeByTargetIdAsync(Guid id);
-        Task<Charge> AddCharge(AddCharge addCharge);
-        Task<Charge> UpdateChargeAsync(Charge charge);
+        Task<List<Charge>> GetChargeByTargetIdAsync(Guid id);
+        Task AddChargeAsync(Charge charge);
+        Task UpdateChargeAsync(Charge charge);
     }
 }

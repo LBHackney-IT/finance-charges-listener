@@ -10,6 +10,7 @@ namespace FinanceChargesListener.Domain
         public Guid TargetId { get; set; }
         public TargetType TargetType { get; set; }
         public ChargeGroup ChargeGroup { get; set; }
+        public short ChargeYear { get; set; }
         public IEnumerable<DetailedCharges> DetailedCharges { get; set; }
     }
 }
