@@ -15,6 +15,6 @@ namespace FinanceChargesListener.Tests
         public static string AssetInformationApiRoute => "http://localhost:5001/api/v1/";
         public static string AssetInformationApiToken => "sdjkhfgsdkjfgsdjfgh";
 
-        
+
     }
 }

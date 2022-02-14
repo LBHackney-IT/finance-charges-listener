@@ -27,7 +27,7 @@ namespace FinanceChargesListener.Tests.E2ETests.Steps
             //    config => config.Excluding(y => y.Description)
             //                    .Excluding(z => z.VersionNumber));
             //entityInDb.Description.Should().Be("Updated");
-            
+
         }
 
         public void ThenAnEntityNotFoundExceptionIsThrown(Guid id)
