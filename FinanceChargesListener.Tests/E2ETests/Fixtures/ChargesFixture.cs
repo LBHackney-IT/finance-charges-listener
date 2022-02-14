@@ -1,20 +1,21 @@
 using Amazon.DynamoDBv2.DataModel;
 using AutoFixture;
 using FinanceChargesListener.Infrastructure;
+using FinanceChargesListener.Infrastructure.Entity;
 using System;
 
 namespace FinanceChargesListener.Tests.E2ETests.Fixtures
 {
-    public class EntityFixture : IDisposable
+    public class ChargesFixture : IDisposable
     {
         private readonly Fixture _fixture = new Fixture();
 
         private readonly IDynamoDBContext _dbContext;
 
-        public DbEntity DbEntity { get; private set; }
+        public ChargeDbEntity DbEntity { get; private set; }
         public Guid DbEntityId { get; private set; }
 
-        public EntityFixture(IDynamoDBContext dbContext)
+        public ChargesFixture(IDynamoDBContext dbContext)
         {
             _dbContext = dbContext;
         }
@@ -37,15 +38,15 @@ namespace FinanceChargesListener.Tests.E2ETests.Fixtures
             }
         }
 
-        private DbEntity ConstructAndSaveEntity(Guid id)
+        private ChargeDbEntity ConstructAndSaveEntity(Guid id, Guid? targetId = null)
         {
-            var dbEntity = _fixture.Build<DbEntity>()
+            var dbEntity = _fixture.Build<ChargeDbEntity>()
                                  .With(x => x.Id, id)
-                                 .With(x => x.VersionNumber, (int?) null)
+                                 .With(x => x.TargetId, targetId)
                                  .Create();
 
-            _dbContext.SaveAsync<DbEntity>(dbEntity).GetAwaiter().GetResult();
-            dbEntity.VersionNumber = 0;
+            _dbContext.SaveAsync<ChargeDbEntity>(dbEntity).GetAwaiter().GetResult();
+            dbEntity.TargetId = Guid.Empty;
             return dbEntity;
         }
 
