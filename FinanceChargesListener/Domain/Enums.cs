@@ -55,5 +55,11 @@ namespace FinanceChargesListener.Domain
             Monthly,
             Weekly
         }
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public enum ChargeSubGroup
+        {
+            Estimate,
+            Actual
+        }
     }
 }

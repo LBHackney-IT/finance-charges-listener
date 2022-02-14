@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
 using Hackney.Shared.Tenure.Domain;
 using static System.String;
 using System.Threading.Tasks.Dataflow;
@@ -24,7 +23,6 @@ namespace FinanceChargesListener.UseCase
         private readonly AssetInformationApiGateway _assetInformationApiGateway;
         private readonly AssetGateway _assetGateway;
         private readonly ChargesMaintenanceApiGateway _chargesMaintenanceApiGateway;
-        private readonly EsGateway _esGateway;
         private readonly IManagementFeeUseCase _managementFeeUseCase;
         private readonly ICommonMethodUseCase _commonMethodUseCase;
 
@@ -33,7 +31,6 @@ namespace FinanceChargesListener.UseCase
             AssetInformationApiGateway assetInformationApiGateway,
             AssetGateway assetGateway,
             ChargesMaintenanceApiGateway chargesMaintenanceApiGateway,
-            EsGateway esGateway,
             IManagementFeeUseCase managementFeeUseCase,
             ICommonMethodUseCase commonMethodUseCase)
         {
@@ -42,7 +39,6 @@ namespace FinanceChargesListener.UseCase
             _assetInformationApiGateway = assetInformationApiGateway;
             _assetGateway = assetGateway;
             _chargesMaintenanceApiGateway = chargesMaintenanceApiGateway;
-            _esGateway = esGateway;
             _managementFeeUseCase = managementFeeUseCase;
             _commonMethodUseCase = commonMethodUseCase;
         }

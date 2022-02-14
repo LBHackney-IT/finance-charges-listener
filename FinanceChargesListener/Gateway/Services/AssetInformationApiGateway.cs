@@ -18,6 +18,15 @@ namespace FinanceChargesListener.Gateway.Services
             _client = client;
         }
 
+        public async Task<Asset> GetAssetByAssetIdAsync(string assetId)
+        {
+            var uri = new Uri($"api/v1/assets/assetId/{assetId}", UriKind.Relative);
+
+            var response = await _client.GetAsync(uri).ConfigureAwait(true);
+            var result = await response.ReadContentAs<Asset>().ConfigureAwait(true);
+            return result;
+        }
+
         public async Task<Asset> GetAssetByIdAsync(Guid assetId)
         {
             var uri = new Uri($"api/v1/assets/{assetId}", UriKind.Relative);

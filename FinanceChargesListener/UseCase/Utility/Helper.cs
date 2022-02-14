@@ -1,5 +1,6 @@
 using FinanceChargesListener.Domain;
 using Hackney.Shared.Asset.Domain;
+using Hackney.Shared.Tenure.Domain;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -74,33 +75,7 @@ namespace FinanceChargesListener.UseCase.Utility
             }
             return dt;
         }
-        public static ChargeType GetChargeType(string chargeName)
-        {
-            switch (chargeName)
-            {
-                case "Estate Cleaning":
-                case "Estate Repairs":
-                case "Estate Electricity":
-                case "Roads, footpaths and drainage":
-                case "CCTV Maintenance":
-                case "Grounds Maintenance":
-                    return ChargeType.Estate;
-                case "Block Cleaning":
-                case "Block Repairs":
-                case "Block Electricity":
-                case "Communal Door Entry Maintenance":
-                case "Lift Maintenance":
-                case "Communal TV aerial Maintenance":
-                case "Heating/Hotwater Maintenance":
-                case "Heating/Hotwater Standing Charge":
-                case "Heating/Hotwater Energy":
-                case "Block CCTV Maintenance":
-                case "Concierge Service":
-                    return ChargeType.Block;
-                default:
-                    return ChargeType.Property;
-            }
-        }
+       
 
         public static List<string> DistinctParentAssetTypes(List<Asset> assets)
         {
@@ -135,7 +110,29 @@ namespace FinanceChargesListener.UseCase.Utility
             });
             return result;
         }
+        public static int GetLeaseholdersCount(List<EstimateActualCharge> estimateOrActualCharges)
+        {
+            if (estimateOrActualCharges == null || !estimateOrActualCharges.Any()) return 0;
+            var filteredData = estimateOrActualCharges.Where(
+                   x => x.TenureType == TenureTypes.LeaseholdRTB.Description
+                || x.TenureType == TenureTypes.PrivateSaleLH.Description
+                || x.TenureType == TenureTypes.SharedOwners.Description
+                || x.TenureType == TenureTypes.SharedEquity.Description
+                || x.TenureType == TenureTypes.ShortLifeLse.Description
+                || x.TenureType == TenureTypes.LeaseholdStair.Description
+            );
+            return filteredData.Count();
 
+        }
+        public static int GetFreeholdersCount(List<EstimateActualCharge> estimateOrActualCharges)
+        {
+            if (estimateOrActualCharges == null || !estimateOrActualCharges.Any()) return 0;
+            var filteredData = estimateOrActualCharges.Where(
+                   x => x.TenureType == TenureTypes.FreeholdServ.Description
+            );
+            return filteredData.Count();
+
+        }
         public static List<string> DistinctTenureTypes(List<Asset> assets)
         {
             var result = new List<string>();

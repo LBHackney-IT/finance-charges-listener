@@ -25,7 +25,7 @@ namespace FinanceChargesListener.UseCase
             var headOfChargeData = JsonSerializer.Deserialize<EntityMessageSqs>(message?.EventData?.NewData?.ToString()
                 ?? string.Empty, jsonSerializerOptions);
 
-            var chargeType = Utility.Helper.GetChargeType(headOfChargeData.ChargeName);
+            var chargeType = Utility.ChargeHelper.GetChargeType(headOfChargeData.ChargeName);
 
             var isTenantsApplicable = Utility.Helper.IsChargeApplicableForTenants(headOfChargeData.ChargeName);
 

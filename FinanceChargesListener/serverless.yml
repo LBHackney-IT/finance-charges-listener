@@ -2,7 +2,8 @@ service: finance-charges-listener
 provider:
   name: aws
   runtime: dotnetcore3.1
-  memorySize: 2048
+  memorySize: 4096
+  timeout: 300
   tracing:
     lambda: true
     apiGateway: true
@@ -16,15 +17,21 @@ package:
 functions:
   FinanceChargesListener:
     name: ${self:service}-${self:provider.stage}
-    handler: FinanceChargesListener::FinanceChargesListener.SqsFunction::FunctionHandler
+    handler: FinanceChargesListener::FinanceChargesListener.FinanceChargesListener::FunctionHandler
     role: lambdaExecutionRole
     environment:
       ### Re-use the same parameter as used by web api applications
       ENVIRONMENT:  ${ssm:/housing-tl/${self:provider.stage}/aspnetcore-environment}
+      FINANCIAL_SUMMARY_API_URL: ${ssm:/housing-finance/${self:provider.stage}/financial-summary-api-url}
+      HOUSING_SEARCH_API_URL: ${ssm:/housing-finance/${self:provider.stage}/housing-search-api-url}
+      HOUSING_SEARCH_API_TOKEN: ${ssm:/housing-finance/${self:provider.stage}/housing-search-api-token}
+      ASSET_INFORMATION_API_URL: ${ssm:/housing-finance/${self:provider.stage}/asset-information-api-short-url}
+      ASSET_INFORMATION_API_TOKEN: ${ssm:/housing-finance/${self:provider.stage}/asset-information-api-token}
+      CHARGES_BUCKET_NAME: ${ssm:/housing-finance/${self:provider.stage}/charges-api-s3-bucket-name}
     events:
       ### Specify the parameter containing the queue arn used to trigget the lambda function here
       ### This will have been defined in the terraform configuration
-      # - sqs: ${ssm:/sqs-queue/${self:provider.stage}/tenures/arn} 
+      - sqs: ${ssm:/sqs-queue/${self:provider.stage}/charges/arn} 
       
 resources:
   Resources:
@@ -80,35 +87,35 @@ resources:
                   Resource: "*"
           ### Remove this if DynamoDb is not being used
           ### TODO - Enable and change the table name as required.
-          #- PolicyName: dynamoDBAccess
-          #  PolicyDocument:
-          #    Version: '2012-10-17'
-          #    Statement:
-          #      - Effect: Allow
-          #        Action:
-          #          - "dynamodb:BatchGet*"
-          #          - "dynamodb:BatchWrite"
-          #          - "dynamodb:DeleteItem"
-          #          - "dynamodb:DescribeStream"
-          #          - "dynamodb:DescribeTable"
-          #          - "dynamodb:Get*"
-          #          - "dynamodb:PutItem"
-          #          - "dynamodb:Query"
-          #          - "dynamodb:Scan"
-          #          - "dynamodb:UpdateItem"
-          #        Resource:
-          #          - 'Fn::Join':
-          #              - ':'
-          #              - - 'arn:aws:dynamodb'
-          #                - Ref: 'AWS::Region'
-          #                - Ref: 'AWS::AccountId'
-          #                - 'table/SomeTable'
-          #          - 'Fn::Join':
-          #              - ':'
-          #              - - 'arn:aws:dynamodb'
-          #                - Ref: 'AWS::Region'
-          #                - Ref: 'AWS::AccountId'
-          #                - 'table/SomeTable/index/*'
+          - PolicyName: dynamoDBAccess
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - "dynamodb:BatchGet*"
+                    - "dynamodb:BatchWrite"
+                    - "dynamodb:DeleteItem"
+                    - "dynamodb:DescribeStream"
+                    - "dynamodb:DescribeTable"
+                    - "dynamodb:Get*"
+                    - "dynamodb:PutItem*"
+                    - "dynamodb:Query"
+                    - "dynamodb:Scan"
+                    - "dynamodb:UpdateItem"
+                  Resource:
+                    - 'Fn::Join':
+                        - ':'
+                        - - 'arn:aws:dynamodb'
+                          - Ref: 'AWS::Region'
+                          - Ref: 'AWS::AccountId'
+                          - 'table/Charges'
+                    - 'Fn::Join':
+                        - ':'
+                        - - 'arn:aws:dynamodb'
+                          - Ref: 'AWS::Region'
+                          - Ref: 'AWS::AccountId'
+                          - 'table/Charges/index/*'
           - PolicyName: sqsAccess
             PolicyDocument:
               Version: '2012-10-17'
