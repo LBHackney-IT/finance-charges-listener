@@ -18,7 +18,7 @@ namespace FinanceChargesListener.UseCase
 {
     public class ApplyHeadOfChargeUseCase : Interfaces.ApplyHeadOfChargeUseCase
     {
-        private readonly HousingSearchService  _housingSearchService;
+        private readonly HousingSearchService _housingSearchService;
         private readonly ChargesApiGateway _chargesApiGateway;
         private readonly AssetInformationApiGateway _assetInformationApiGateway;
         private readonly AssetGateway _assetGateway;
@@ -47,7 +47,7 @@ namespace FinanceChargesListener.UseCase
         {
             if (message is null) throw new ArgumentNullException(nameof(message));
             var filteredList = await GetAssetsList(message, AssetType.Dwelling.ToString());
-            
+
             var assetsWithBlockEstate = filteredList.Item1.Where(x => x.AssetLocation.ParentAssets.Any()).ToList();
 
             var leaseholdAssetsList = GetLeaseholdersAssetsList(assetsWithBlockEstate);
@@ -56,7 +56,7 @@ namespace FinanceChargesListener.UseCase
             if (message?.EventData?.NewData != null)
             {
                 var headOfChargeData = JsonSerializer.Deserialize<EntityMessageSqs>(message?.EventData?.NewData?.ToString() ?? Empty, jsonSerializerOptions);
-               
+
                 bool useCaseResult = headOfChargeData.ChargeName switch
                 {
                     HeadOfCharges.ManagementFee => await _managementFeeUseCase.ApplyManagementFee(assetsWithBlockEstate)
@@ -101,7 +101,7 @@ namespace FinanceChargesListener.UseCase
 
             return result.Where(x => x != null).ToList(); ;
         }
-       
+
         private async Task<(List<Asset>, long)> GetAssetsList(EntityEventSns message, string assetType)
         {
             var time = Stopwatch.StartNew();
@@ -174,7 +174,7 @@ namespace FinanceChargesListener.UseCase
                      || x.Tenure?.Type == TenureTypes.MesneProfitAc.Description
             );
             response.AddRange(filteredData);
-            return response; 
+            return response;
 
         }
 
