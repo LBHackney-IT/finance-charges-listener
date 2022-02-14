@@ -4,7 +4,7 @@ using System.Text;
 
 namespace FinanceChargesListener.Domain
 {
-    public class ChargeUpdate: Charge
+    public class ChargeUpdate : Charge
     {
     }
 }

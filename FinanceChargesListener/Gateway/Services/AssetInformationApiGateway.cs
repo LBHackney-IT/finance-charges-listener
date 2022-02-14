@@ -9,7 +9,7 @@ using Hackney.Shared.Asset.Domain;
 
 namespace FinanceChargesListener.Gateway.Services
 {
-    public class AssetInformationApiGateway: Interfaces.AssetInformationApiGateway
+    public class AssetInformationApiGateway : Interfaces.AssetInformationApiGateway
     {
         private readonly HttpClient _client;
 

@@ -97,7 +97,7 @@ namespace FinanceChargesListener
             .AddHttpMessageHandler<LoggingDelegatingHandler>();
 
             var financialSummaryApiUrl = Environment.GetEnvironmentVariable("FINANCIAL_SUMMARY_API_URL");
-         
+
             services.AddHttpClient<IFinancialSummaryService, FinancialSummaryService>(c =>
             {
                 c.BaseAddress = new Uri(financialSummaryApiUrl);

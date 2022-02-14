@@ -32,7 +32,7 @@ namespace FinanceChargesListener.UseCase
             AssetInformationApiGateway assetInformationApiGateway,
             ChargesApiGateway chargesApiGateway,
             IFinancialSummaryService financialSummaryService,
-            ILogger<EstimateActualFileProcessUseCase> logger )
+            ILogger<EstimateActualFileProcessUseCase> logger)
         {
             _awsS3FileService = awsS3FileService;
             _housingSearchService = housingSearchService;
@@ -75,7 +75,7 @@ namespace FinanceChargesListener.UseCase
                                 chargeSubGroup = reader.GetValue(19).ToString().Substring(0, 3).EndsWith("E")
                                            ? Constants.EstimateTypeFile
                                            : Constants.ActualTypeFile;
-                                               
+
                                 _logger.LogDebug($"Extracted the ChargeYear for Estimates Upload as {chargeYear}");
                             }
                             else
@@ -163,9 +163,9 @@ namespace FinanceChargesListener.UseCase
                     foreach (var item in estimatesActual)
                     {
                         propertyCharges.Add(ChargeHelper.GetChargeModel(AssetType.Dwelling.ToString(),
-                            ChargeGroup.Leaseholders, chargeSubGroup,  createdBy, chargeYear, item));
+                            ChargeGroup.Leaseholders, chargeSubGroup, createdBy, chargeYear, item));
                     }
-                    
+
                     // Estate, Block and Hackney Totals 
                     var blockGroup = estimatesActual.GroupBy(x => x.BlockId).ToList();
                     var estateGroup = estimatesActual.GroupBy(x => x.EstateId).ToList();

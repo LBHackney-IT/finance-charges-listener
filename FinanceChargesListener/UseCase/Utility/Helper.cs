@@ -62,7 +62,7 @@ namespace FinanceChargesListener.UseCase.Utility
                 x == HeadOfCharges.CommunalTVAerial ||
                 x == HeadOfCharges.HeatingFuel ||
                 x == HeadOfCharges.ConciergeService => true,
-                _=> false
+                _ => false
             };
             return result;
         }
@@ -75,7 +75,7 @@ namespace FinanceChargesListener.UseCase.Utility
             }
             return dt;
         }
-       
+
 
         public static List<string> DistinctParentAssetTypes(List<Asset> assets)
         {
@@ -174,7 +174,7 @@ namespace FinanceChargesListener.UseCase.Utility
             return newCharge;
 
         }
-       
+
         public static DetailedCharges GetChargeDetailModel(decimal chargeAmount,
             string chargeName, string chargeCode, Enums.ChargeGroup chargeGroup, ChargeType chargeType)
         {

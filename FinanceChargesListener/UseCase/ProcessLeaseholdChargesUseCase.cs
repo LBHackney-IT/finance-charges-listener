@@ -46,7 +46,7 @@ namespace FinanceChargesListener.UseCase
             foreach (var asset in assets)
             {
                 var charges = await _chargesApiGateway.GetChargeByTargetIdAsync(asset.Id).ConfigureAwait(false);
-                var chargeAmount = Math.Round((((decimal) calculatedList[asset.Id] * entityMessageSqs.TotalEstimateAmount) / 100)/12, 2);
+                var chargeAmount = Math.Round((((decimal) calculatedList[asset.Id] * entityMessageSqs.TotalEstimateAmount) / 100) / 12, 2);
 
                 // PATCH LOGIC
                 if (charges != null && charges.Any())

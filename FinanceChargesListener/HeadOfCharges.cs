@@ -12,7 +12,7 @@ namespace FinanceChargesListener
 
         // Estate Charges
         // Tenants
-        public const string EstateCleaning	 = "Estate Cleaning";
+        public const string EstateCleaning = "Estate Cleaning";
         public const string EstateRepairs = "Estate Repairs";
         // Tenants
         public const string EstateElectricity = "Estate Electricity";

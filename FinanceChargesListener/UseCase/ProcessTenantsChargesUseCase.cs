@@ -25,11 +25,11 @@ namespace FinanceChargesListener.UseCase
         public async Task<bool> ProcessTenantsServiceCharges(List<Asset> assets,
             ChargeType chargeType, EntityMessageSqs headOfChargeData, JsonSerializerOptions jsonSerializerOptions)
         {
-            
+
             if (chargeType == ChargeType.Estate)
             {
                 var estateProperties = Utility.Helper.GetAssetsWithEstate(assets);
-                
+
                 var chargeAmount = headOfChargeData != null ? Math.Round((headOfChargeData.TotalEstimateAmount / estateProperties.Count), 2) : 0;
 
                 await ApplyTenantsCharges(chargeAmount, headOfChargeData, estateProperties, chargeType);
@@ -37,7 +37,7 @@ namespace FinanceChargesListener.UseCase
             else if (chargeType == ChargeType.Block)
             {
                 var blockProperties = Utility.Helper.GetAssetsWithBlock(assets);
-                var chargeAmount = headOfChargeData != null ? Math.Round((headOfChargeData.TotalEstimateAmount / blockProperties.Count)/52, 2) : 0;
+                var chargeAmount = headOfChargeData != null ? Math.Round((headOfChargeData.TotalEstimateAmount / blockProperties.Count) / 52, 2) : 0;
 
                 await ApplyTenantsCharges(chargeAmount, headOfChargeData, blockProperties, chargeType);
             }
@@ -56,7 +56,7 @@ namespace FinanceChargesListener.UseCase
             foreach (var asset in assets)
             {
                 var charges = await _chargesApiGateway.GetChargeByTargetIdAsync(asset.Id).ConfigureAwait(false);
-               
+
                 // PATCH LOGIC
                 if (charges != null && charges.Any())
                 {
@@ -80,7 +80,7 @@ namespace FinanceChargesListener.UseCase
                             estimatedTeantCharge.DetailedCharges.ToList().Add(chargeDetail);
                         }
                     }
-                   
+
                     await _chargesApiGateway.UpdateChargeAsync(estimatedTeantCharge).ConfigureAwait(false);
 
                     //var chargeMaintenance = new ChargeMaintenance();

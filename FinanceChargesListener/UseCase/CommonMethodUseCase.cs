@@ -19,7 +19,7 @@ namespace FinanceChargesListener.UseCase
             _processTenantsChargesUseCase = processTenantsChargesUseCase;
             _processLeaseholdChargesUseCase = processLeaseholdChargesUseCase;
         }
-        public async Task<bool> ApportionCharge(List<Asset> assets,  EntityEventSns message,
+        public async Task<bool> ApportionCharge(List<Asset> assets, EntityEventSns message,
             JsonSerializerOptions jsonSerializerOptions)
         {
             var headOfChargeData = JsonSerializer.Deserialize<EntityMessageSqs>(message?.EventData?.NewData?.ToString()
