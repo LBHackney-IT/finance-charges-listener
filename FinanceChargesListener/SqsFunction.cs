@@ -42,9 +42,7 @@ namespace FinanceChargesListener
             services.ConfigureDynamoDB();
 
             services.AddHttpClient();
-            services.AddScoped<IDoSomethingUseCase, DoSomethingUseCase>();
-
-            services.AddScoped<IDbEntityGateway, DynamoDbEntityGateway>();
+            services.AddScoped<IUpdateChargesUseCase, UpdateChargesUseCase>();
 
             base.ConfigureServices(services);
         }
@@ -77,31 +75,25 @@ namespace FinanceChargesListener
         {
             context.Logger.LogLine($"Processing message {message.MessageId}");
 
-            var entityEvent = JsonSerializer.Deserialize<EntityEventSns>(message.Body, _jsonOptions);
+            var entityEvent = JsonSerializer.Deserialize<ChargesEventSns>(message.Body);
 
             using (Logger.BeginScope("CorrelationId: {CorrelationId}", entityEvent.CorrelationId))
             {
                 try
                 {
-                    IMessageProcessing processor = null;
-                    switch (entityEvent.EventType)
+                    // TODO Factory
+                    IMessageProcessing processor = entityEvent.EventType switch
                     {
-                        case EventTypes.DoSomethingEvent:
-                            {
-                                processor = ServiceProvider.GetService<IDoSomethingUseCase>();
-                                break;
-                            }
-                        // TODO - Implement other message types here...
-                        default:
-                            throw new ArgumentException($"Unknown event type: {entityEvent.EventType} on message id: {message.MessageId}");
-                    }
+                        EventTypes.UpdateChargeEvent => ServiceProvider.GetService<IUpdateChargesUseCase>(),
+                        _ => throw new ArgumentException($"Unknown event type: {entityEvent.EventType} on message id: {message.MessageId}")
+                    };
 
                     await processor.ProcessMessageAsync(entityEvent).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
                     Logger.LogError(ex, $"Exception processing message id: {message.MessageId}; type: {entityEvent.EventType}; entity id: {entityEvent.EntityId}");
-                    throw; // AWS will handle retry/moving to the dead letter queue
+                    throw;
                 }
             }
         }

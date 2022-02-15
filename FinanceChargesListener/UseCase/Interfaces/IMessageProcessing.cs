@@ -5,6 +5,6 @@ namespace FinanceChargesListener.UseCase.Interfaces
 {
     public interface IMessageProcessing
     {
-        Task ProcessMessageAsync(EntityEventSns message);
+        Task ProcessMessageAsync(ChargesEventSns message);
     }
 }

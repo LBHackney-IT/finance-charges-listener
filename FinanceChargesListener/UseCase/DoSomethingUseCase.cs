@@ -32,5 +32,10 @@ namespace FinanceChargesListener.UseCase
             // Save updated entity
             await _gateway.SaveEntityAsync(entity).ConfigureAwait(false);
         }
+
+        public Task ProcessMessageAsync(ChargesEventSns message)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
