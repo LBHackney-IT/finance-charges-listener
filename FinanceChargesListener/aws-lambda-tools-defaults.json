@@ -12,5 +12,5 @@
   "function-runtime": "dotnetcore3.1",
   "function-memory-size": 256,
   "function-timeout": 30,
-  "function-handler": "FinanceChargesListener::FinanceChargesListener.SqsFunction::FunctionHandler"
+  "function-handler": "FinanceChargesListener::FinanceChargesListener.ChargesListener::FunctionHandler"
 }

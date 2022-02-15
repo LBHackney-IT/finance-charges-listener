@@ -6,8 +6,12 @@
       "workingDirectory": ".\\bin\\$(Configuration)\\netcoreapp3.1",
       "executablePath": "%USERPROFILE%\\.dotnet\\tools\\dotnet-lambda-test-tool-3.1.exe",
       "environmentVariables": {
-        "ENVIRONMENT": "LocalDevelopment"
-      }
+        "ENVIRONMENT": "LocalDevelopment",
+        "DynamoDb_LocalServiceUrl": "http://localhost:8000",
+        "DynamoDb_LocalAccessKey": "2cl9i",
+        "DynamoDb_LocalSecretKey": "vymxp",
+        "DynamoDb_LocalMode": "true"
+       }
     }
   }
 }

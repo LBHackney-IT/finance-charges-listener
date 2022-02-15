@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace FinanceChargesListener.Gateway
 {
-    public class DynamoDbEntityGateway : IDbEntityGateway
+    public class DynamoDbEntityGateway : DbEntityGateway
     {
         private readonly IDynamoDBContext _dynamoDbContext;
         private readonly ILogger<DynamoDbEntityGateway> _logger;

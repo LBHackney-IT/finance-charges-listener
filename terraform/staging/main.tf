@@ -42,76 +42,76 @@ terraform {
 ### This is the parameter containing the arn of the topic to which we want to subscribe
 ### This will have been created by the service the generates the events in which we are interested
 #
-# data "aws_ssm_parameter" "SOME-SOURCE-DOMAIN_sns_topic_arn" {
-#   name = "/sns-topic/staging/SOME-SOURCE-DOMAIN/arn"
-# }
+data "aws_ssm_parameter" "charges_sns_topic_arn" {
+  name = "/sns-topic/staging/charges/arn"
+}
 
 ### This is the definition of the dead letter queue used whem message processsing fails for a given message
 #
-# resource "aws_sqs_queue" "THIS_DOMAIN_dead_letter_queue" {
-#   name                        = "THIS_DOMAINdeadletterqueue.fifo"
-#   fifo_queue                  = true
-#   content_based_deduplication = true
-#   kms_master_key_id           = "alias/housing-staging-cmk"
-#   kms_data_key_reuse_period_seconds = 300
-# }
+resource "aws_sqs_queue" "charges_dead_letter_queue" {
+  name                        = "chargesdeadletterqueue.fifo"
+  fifo_queue                  = true
+  content_based_deduplication = true
+  kms_master_key_id           = "alias/housing-staging-cmk"
+  kms_data_key_reuse_period_seconds = 300
+}
 
 ### This is the queue  which will receive the events published to the topic listed above
 ### This is what the listener lambda function will get triggered by.
 #
-# resource "aws_sqs_queue" "THIS_DOMAIN_queue" {
-#   name                        = "THIS_DOMAINqueue.fifo"
-#   fifo_queue                  = true
-#   content_based_deduplication = true
-#   kms_master_key_id           = "alias/housing-staging-cmk"           # This is a custom key
-#   kms_data_key_reuse_period_seconds = 300
-#   redrive_policy              = jsonencode({
-#     deadLetterTargetArn = aws_sqs_queue.THIS_DOMAIN_dead_letter_queue.arn,
-#     maxReceiveCount     = 3                                               # Messages that fail processing are retried twice before being moved to the dead letter queue
-#   })
-# }
+resource "aws_sqs_queue" "charges_queue" {
+  name                        = "chargesqueue.fifo"
+  fifo_queue                  = true
+  content_based_deduplication = true
+  kms_master_key_id           = "alias/housing-staging-cmk"           # This is a custom key
+  kms_data_key_reuse_period_seconds = 300
+  redrive_policy              = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.charges_dead_letter_queue.arn,
+    maxReceiveCount     = 3                                               # Messages that fail processing are retried twice before being moved to the dead letter queue
+  })
+}
 
 ### This is the AWS policy that allows the topic to forward an event to the queue declared above
 # 
-# resource "aws_sqs_queue_policy" "THIS_DOMAIN_queue_policy" {
-#   queue_url = aws_sqs_queue.THIS_DOMAIN_queue.id
-#   policy = <<POLICY
-#   {
-#       "Version": "2012-10-17",
-#       "Id": "sqspolicy",
-#       "Statement": [
-#       {
-#           "Sid": "First",
-#           "Effect": "Allow",
-#           "Principal": "*",
-#           "Action": "sqs:SendMessage",
-#           "Resource": "${aws_sqs_queue.THIS_DOMAIN_queue.arn}",
-#           "Condition": {
-#           "ArnEquals": {
-#               "aws:SourceArn": "${data.aws_ssm_parameter.SOME-SOURCE-DOMAIN_sns_topic_arn.value}"
-#           }
-#           }
-#       }
-#       ]
-#   }
-#   POLICY
-# }
+resource "aws_sqs_queue_policy" "charges_queue_policy" {
+  queue_url = aws_sqs_queue.charges_queue.id
+  policy = <<POLICY
+  {
+      "Version": "2012-10-17",
+      "Id": "sqspolicy",
+      "Statement": [
+      {
+          "Sid": "First",
+          "Effect": "Allow",
+          "Principal": "*",
+          "Action": "sqs:SendMessage",
+          "Resource": "${aws_sqs_queue.charges_queue.arn}",
+          "Condition": {
+          "ArnEquals": {
+              "aws:SourceArn": "${data.aws_ssm_parameter.charges_sns_topic_arn.value}"
+          }
+          }
+      }
+      ]
+  }
+  POLICY
+}
 
 ### This is the subscription definition that tells the topic which queue to use
 # 
-# resource "aws_sns_topic_subscription" "THIS_DOMAIN_queue_subscribe_to_SOME-SOURCE-DOMAIN_sns" {
-#   topic_arn = data.aws_ssm_parameter.SOME-SOURCE-DOMAIN_sns_topic_arn.value
-#   protocol  = "sqs"
-#   endpoint  = aws_sqs_queue.THIS_DOMAIN_queue.arn
-#   raw_message_delivery = true
-# }
+resource "aws_sns_topic_subscription" "charges_queue_subscribe_to_charges_sns" {
+  topic_arn = data.aws_ssm_parameter.charges_sns_topic_arn.value
+  protocol  = "sqs"
+  endpoint  = aws_sqs_queue.charges_queue.arn
+  raw_message_delivery = true
+}
 
 ### This creates an AWS parameter with arn of the queue that will then be used within the Serverless.yml
 ### to specify the queue that will trigger the lambda function.
 # 
-# resource "aws_ssm_parameter" "THIS_DOMAIN_sqs_queue_arn" {
-#   name  = "/sqs-queue/staging/THIS_DOMAIN/arn"
-#   type  = "String"
-#   value = aws_sqs_queue.THIS_DOMAIN_queue.arn
-# }
+resource "aws_ssm_parameter" "charges_sqs_queue_arn" {
+  name  = "/sqs-queue/staging/charges/arn"
+  type  = "String"
+  value = aws_sqs_queue.charges_queue.arn
+}
 
