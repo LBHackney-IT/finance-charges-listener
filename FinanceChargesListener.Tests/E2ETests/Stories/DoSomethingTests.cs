@@ -13,18 +13,18 @@ namespace FinanceChargesListener.Tests.E2ETests.Stories
     [Collection("DynamoDb collection")]
     public class DoSomethingTests : IDisposable
     {
-        private readonly DynamoDbFixture _dbFixture;
+        private readonly AwsIntegrationTest _dbFixture;
         private readonly ChargesFixture _entityFixture;
 
-        private readonly DoSomethingUseCaseSteps _steps;
+        private readonly ChargeCreatedUseCaseSteps _steps;
 
-        public DoSomethingTests(DynamoDbFixture dbFixture)
+        public DoSomethingTests(AwsIntegrationTest dbFixture)
         {
             _dbFixture = dbFixture;
 
             _entityFixture = new ChargesFixture(_dbFixture.DynamoDbContext);
 
-            _steps = new DoSomethingUseCaseSteps();
+            _steps = new ChargeCreatedUseCaseSteps();
         }
 
         public void Dispose()
@@ -44,24 +44,24 @@ namespace FinanceChargesListener.Tests.E2ETests.Stories
             }
         }
 
-        //[Fact]
-        //public void ListenerUpdatesTheEntity()
-        //{
-        //    var id = Guid.NewGuid();
-        //    this.Given(g => _entityFixture.GivenAnEntityAlreadyExists(id))
-        //        .When(w => _steps.WhenTheFunctionIsTriggered(id))
-        //        .Then(t => _steps.ThenTheEntityIsUpdated(_entityFixture.DbEntity, _dbFixture.DynamoDbContext))
-        //        .BDDfy();
-        //}
+        [Fact]
+        public void ListenerUpdatesTheEntity()
+        {
+            var id = Guid.NewGuid();
+            this.Given(g => _entityFixture.GivenAnEntityAlreadyExists(id))
+                .When(w => _steps.WhenTheFunctionIsTriggered(id))
+                .Then(t => _steps.ThenTheEntityIsUpdated(_entityFixture.DbEntity, _dbFixture.DynamoDbContext))
+                .BDDfy();
+        }
 
-        //[Fact]
-        //public void EntityNotFound()
-        //{
-        //    var id = Guid.NewGuid();
-        //    this.Given(g => _entityFixture.GivenAnEntityDoesNotExist(id))
-        //        .When(w => _steps.WhenTheFunctionIsTriggered(id))
-        //        .Then(t => _steps.ThenAnEntityNotFoundExceptionIsThrown(id))
-        //        .BDDfy();
-        //}
+        [Fact]
+        public void EntityNotFound()
+        {
+            var id = Guid.NewGuid();
+            this.Given(g => _entityFixture.GivenAnEntityDoesNotExist(id))
+                .When(w => _steps.WhenTheFunctionIsTriggered(id))
+                .Then(t => _steps.ThenAnEntityNotFoundExceptionIsThrown(id))
+                .BDDfy();
+        }
     }
 }

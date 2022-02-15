@@ -9,9 +9,9 @@ using System.Threading.Tasks;
 
 namespace FinanceChargesListener.Tests.E2ETests.Steps
 {
-    public class DoSomethingUseCaseSteps : BaseSteps
+    public class ChargeCreatedUseCaseSteps : BaseSteps
     {
-        public DoSomethingUseCaseSteps()
+        public ChargeCreatedUseCaseSteps()
         { }
 
         public async Task WhenTheFunctionIsTriggered(Guid id)
@@ -23,18 +23,18 @@ namespace FinanceChargesListener.Tests.E2ETests.Steps
         {
             var entityInDb = await dbContext.LoadAsync<ChargeDbEntity>(beforeChange.Id);
 
-            //entityInDb.Should().BeEquivalentTo(beforeChange,
-            //    config => config.Excluding(y => y.Description)
-            //                    .Excluding(z => z.VersionNumber));
-            //entityInDb.Description.Should().Be("Updated");
+            entityInDb.Should().BeEquivalentTo(beforeChange,
+                config => config.Excluding(y => y.CreatedAt)
+                                .Excluding(z => z.LastUpdatedAt));
+            entityInDb.ChargeSubGroup.Should().Be("Estimate");
 
         }
 
         public void ThenAnEntityNotFoundExceptionIsThrown(Guid id)
         {
             _lastException.Should().NotBeNull();
-            _lastException.Should().BeOfType(typeof(EntityNotFoundException<DomainEntity>));
-            (_lastException as EntityNotFoundException<DomainEntity>).Id.Should().Be(id);
+            _lastException.Should().BeOfType(typeof(EntityNotFoundException<Charge>));
+            (_lastException as EntityNotFoundException<Charge>).Id.Should().Be(id);
         }
     }
 }
