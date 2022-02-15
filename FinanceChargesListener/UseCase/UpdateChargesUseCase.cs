@@ -2,7 +2,6 @@ using FinanceChargesListener.Boundary;
 using FinanceChargesListener.Gateway.Interfaces;
 using FinanceChargesListener.UseCase.Interfaces;
 using Hackney.Core.Logging;
-using Hackney.Shared.Asset.Domain;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
