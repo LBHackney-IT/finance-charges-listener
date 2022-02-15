@@ -58,7 +58,7 @@ namespace FinanceChargesListener.Tests
                     attributeDefinitions.Add(new AttributeDefinition(table.PartitionKey.KeyName,
                         table.PartitionKey.KeyScalarType));
 
-                    
+
 
                     CreateTableRequest request = new CreateTableRequest
                     {

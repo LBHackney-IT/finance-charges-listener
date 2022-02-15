@@ -44,7 +44,7 @@ namespace FinanceChargesListener.Tests
             EnsureEnvVarConfigured("DynamoDb_LocalServiceUrl", "http://localhost:8000");
             EnsureEnvVarConfigured("DynamoDb_LocalSecretKey", "8ksq4m6");
             EnsureEnvVarConfigured("DynamoDb_LocalAccessKey", "ig7pb");
-           
+
             _factory = new AwsMockApplicationFactory(_tables);
 
             _host = _factory.CreateHostBuilder(null).Build();
