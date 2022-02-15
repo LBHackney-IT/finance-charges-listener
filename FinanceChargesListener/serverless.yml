@@ -17,7 +17,7 @@ package:
 functions:
   FinanceChargesListener:
     name: ${self:service}-${self:provider.stage}
-    handler: FinanceChargesListener::FinanceChargesListener.FinanceChargesListener::FunctionHandler
+    handler: FinanceChargesListener::FinanceChargesListener.ChargesListener::FunctionHandler
     role: lambdaExecutionRole
     environment:
       ### Re-use the same parameter as used by web api applications
