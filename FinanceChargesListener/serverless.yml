@@ -3,7 +3,7 @@ provider:
   name: aws
   runtime: dotnetcore3.1
   memorySize: 4096
-  timeout: 300
+  timeout: 600
   tracing:
     lambda: true
     apiGateway: true
