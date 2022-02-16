@@ -10,5 +10,7 @@ namespace FinanceChargesListener.Infrastructure.Interfaces
         public void AddAuthorization(AuthenticationHeaderValue headerValue);
 
         public Task<HttpResponseMessage> GetAsync(Uri uri);
+
+        public Task<HttpResponseMessage> PatchAsync(Uri uri, HttpContent content);
     }
 }
