@@ -30,28 +30,42 @@ namespace FinanceChargesListener.UseCase
 
             if (message.EventData.NewData is DwellingEventRequest request)
             {
-                var asset = await _assetGateway.GetById(request.AssetId);
+                var updatedCharge = await _chargesGateway.GetById(request.ChargeId, request.AssetId)
+                    ?? throw new ArgumentException($"Cannot load charge entity from Charges DynamoDB for asset id: {request.AssetId} and chargeId: {request.ChargeId}");
 
-                if (asset == null)
+                var asset = await _assetGateway.GetById(request.AssetId)
+                    ?? throw new ArgumentException($"Cannot load asset information entity from AssetInformationAPI for asset id: {request.AssetId}");
+
+                var parentAssets = asset.AssetLocation?.ParentAssets;
+                if (parentAssets == null)
                 {
-                    throw new ArgumentNullException(nameof(asset));
+                    return;
                 }
 
-                var charges = await _chargesGateway.GetAllByAssetId(asset.Id);
+                foreach (var parentAsset in parentAssets)
+                {
+                    var chargesForParentAsset = await _chargesGateway.GetAllByAssetId(parentAsset.Id)
+                        ?? throw new ArgumentException($"Cannot load asset information entity from AssetInformationAPI for parent asset id: {parentAsset.Id}");
+
+                    var chargetToUpdate = chargesForParentAsset.Where(c => c.ChargeYear == updatedCharge.ChargeYear)
+
+                }
 
                 if (charges == null || charges.Count == 0)
                 {
-                    throw new ArgumentException($"{nameof(charges)}");
+                    throw new ArgumentException($"Cannot load Charges from ChargesAPI for asset id: {asset.Id}");
                 }
 
-                var chargesDetails = charges.SelectMany(c => c.DetailedCharges);
+                var chargesDetails = charges.Where(c => c.ChargeGroup == request.cha).SelectMany(c => c.DetailedCharges);
 
-                foreach (var chargeDetail in request.Details)
+                foreach (var updatedChargeDetail in request.Details)
                 {
-                    var updatedDetails = chargesDetails.Where(cd => cd.SubType == chargeDetail.SubType)
+                    var existingDetailsToUpdate = chargesDetails
+                        .Where(cd => cd.SubType == updatedChargeDetail.SubType &&
+                                     cd.ChargeType == updatedChargeDetail.Cha)
                                                        .ToList();
 
-                    updatedDetails.ForEach(cd => cd.Amount = chargeDetail.Amount);
+                    existingDetailsToUpdate.ForEach(cd => cd.Amount = updatedChargeDetail.Amount);
                 }
 
                 // update in db

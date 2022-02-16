@@ -7,6 +7,7 @@ namespace FinanceChargesListener.Gateway.Interfaces
 {
     public interface IChargesGateway
     {
+        Task<Charge> GetById(Guid chargeId, Guid assetId);
         Task<List<Charge>> GetAllByAssetId(Guid assetId);
     }
 }

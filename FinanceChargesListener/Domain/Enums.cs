@@ -19,14 +19,9 @@ namespace FinanceChargesListener.Domain
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum TargetType
     {
-        Tenure,
-        Person,
-        Organisation,
-        Asset,
         Block,
-        Estate,
-        Dwelling,
         Concierge,
+        Dwelling,
         LettableNonDwelling,
         MediumRiseBlock,
         NA,
@@ -37,6 +32,7 @@ namespace FinanceChargesListener.Domain
         CleanersFacilities,
         CombinedHeatAndPowerUnit,
         CommunityHall,
+        Estate,
         HighRiseBlock,
         Lift,
         LowRiseBlock,
