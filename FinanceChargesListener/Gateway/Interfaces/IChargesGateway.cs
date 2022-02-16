@@ -9,5 +9,6 @@ namespace FinanceChargesListener.Gateway.Interfaces
     {
         Task<Charge> GetById(Guid chargeId, Guid assetId);
         Task<List<Charge>> GetAllByAssetId(Guid assetId);
+        Task<bool> SaveBatchAsync(List<Charge> charges);
     }
 }

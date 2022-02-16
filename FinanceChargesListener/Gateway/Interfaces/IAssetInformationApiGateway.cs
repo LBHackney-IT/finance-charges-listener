@@ -4,8 +4,8 @@ using Hackney.Shared.Asset.Domain;
 
 namespace FinanceChargesListener.Gateway.Interfaces
 {
-    public interface IAssetGateway
+    public interface IAssetInformationApiGateway
     {
-        Task<Asset> GetById(Guid id);
+        Task<Asset> GetAssetEstimateById(Guid id);
     }
 }

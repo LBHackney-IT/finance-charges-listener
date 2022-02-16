@@ -6,6 +6,6 @@ namespace FinanceChargesListener.Infrastructure.Interfaces
 {
     public interface IUpdateAssetSummary
     {
-        Task<AssetSummary> UpdateAsync(Guid assetId, decimal totalServiceCharges);
+        Task<AssetEstimateSummary> UpdateAsync(Guid assetId, decimal totalServiceCharges);
     }
 }

@@ -1,8 +1,7 @@
 using Amazon.Lambda.Core;
 using Amazon.Lambda.SQSEvents;
 using FinanceChargesListener.Boundary;
-using FinanceChargesListener.Gateway;
-using FinanceChargesListener.Gateway.Interfaces;
+using FinanceChargesListener.Domain.EventMessages;
 using FinanceChargesListener.UseCase;
 using FinanceChargesListener.UseCase.Interfaces;
 using Hackney.Core.DynamoDb;
@@ -10,6 +9,7 @@ using Hackney.Core.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -75,7 +75,36 @@ namespace FinanceChargesListener
         {
             context.Logger.LogLine($"Processing message {message.MessageId}");
 
-            var entityEvent = JsonSerializer.Deserialize<ChargesEventSns>(message.Body);
+            // Hanna Holasava
+            // This is only for testing.
+            // Needs to be removed!
+            ChargesEventSns eventModel = new ChargesEventSns
+            {
+                EntityId = Guid.Parse("bd69764c-6776-487b-9ba6-fe0843356f1a"),
+                EntityTargetId = Guid.Parse("0fe23051-96e7-1b17-4614-fd3550192c87"),
+                EventType = "DwellingChargeUpdatedEvent",
+                EventData = new ChargesEventData
+                {
+                    NewData = new List<DetailedChargeChange>
+                    {
+                        new DetailedChargeChange
+                        {
+                            ChargeType = Domain.ChargeType.Property,
+                            NewAmount = 100,
+                            SubType = "Ground rent"
+                        },
+                        new DetailedChargeChange
+                        {
+                            SubType = "Estates Cleaning",
+                            ChargeType = Domain.ChargeType.Estate,
+                            NewAmount = 1000
+                        }
+                    }
+                }
+            };
+            var eventJson = JsonSerializer.Serialize(eventModel);
+
+             var entityEvent = JsonSerializer.Deserialize<ChargesEventSns>(eventJson);
 
             using (Logger.BeginScope("CorrelationId: {CorrelationId}", entityEvent.CorrelationId))
             {
@@ -84,7 +113,8 @@ namespace FinanceChargesListener
                     // TODO Factory
                     IMessageProcessing processor = entityEvent.EventType switch
                     {
-                        EventTypes.UpdateChargeEvent => ServiceProvider.GetService<IUpdateChargesUseCase>(),
+                        EventTypes.DwellingChargeUpdatedEvent => ServiceProvider.GetService<IUpdateChargesUseCase>(),
+
                         _ => throw new ArgumentException($"Unknown event type: {entityEvent.EventType} on message id: {message.MessageId}")
                     };
 

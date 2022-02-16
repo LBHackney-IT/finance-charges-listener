@@ -3,6 +3,7 @@ using FinanceChargesListener.Domain;
 using Hackney.Shared.Asset.Domain;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace FinanceChargesListener.Infrastructure
 {
@@ -25,7 +26,7 @@ namespace FinanceChargesListener.Infrastructure
 
                     detailCharges.Add(new DetailedCharges
                     {
-                        Amount = Convert.ToDecimal(detail.M["amount"].N),
+                        Amount = Convert.ToDecimal(detail.M["amount"].N, CultureInfo.InvariantCulture),
                         ChargeCode = detail.M["chargeCode"].S,
                         ChargeType = Enum.Parse<ChargeType>(detail.M["chargeType"].S),
                         Type = detail.M["type"].S,

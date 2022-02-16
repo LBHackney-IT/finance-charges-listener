@@ -1,9 +1,12 @@
 using FinanceChargesListener.Boundary;
 using FinanceChargesListener.Domain;
+using FinanceChargesListener.Domain.EventMessages;
 using FinanceChargesListener.Gateway.Interfaces;
+using FinanceChargesListener.Infrastructure.Interfaces;
 using FinanceChargesListener.UseCase.Interfaces;
 using Hackney.Core.Logging;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -11,17 +14,17 @@ namespace FinanceChargesListener.UseCase
 {
     public class UpdateChargesUseCase : IUpdateChargesUseCase
     {
-        private readonly IAssetGateway _assetGateway;
-        private readonly IAssetSummaryGateway _assetSummaryGateway;
+        private readonly IAssetInformationApiGateway _assetGateway;
         private readonly IChargesGateway _chargesGateway;
+        private readonly IFinancialSummaryApiGateway _summaryApiHttpClient;
 
-        public UpdateChargesUseCase(IAssetGateway assetGateway,
+        public UpdateChargesUseCase(IAssetInformationApiGateway assetGateway,
                                     IChargesGateway chargesGateway,
-                                    IAssetSummaryGateway assetSummaryGateway)
+                                    IFinancialSummaryApiGateway summaryApiHttpClient)
         {
             _assetGateway = assetGateway;
             _chargesGateway = chargesGateway;
-            _assetSummaryGateway = assetSummaryGateway;
+            _summaryApiHttpClient = summaryApiHttpClient;
         }
 
         [LogCall]
@@ -32,62 +35,78 @@ namespace FinanceChargesListener.UseCase
                 throw new ArgumentNullException(nameof(message));
             }
 
-            if (message.EventData.NewData is DwellingEventRequest request)
+            List<DetailedChargeChange> updatedDetailedCharges = message.EventData.NewData;
+
+            var updatedCharge = await _chargesGateway.GetById(message.EntityId, message.EntityTargetId)
+                ?? throw new ArgumentException($"Cannot load charge entity from Charges DynamoDB for asset id: {message.EntityTargetId} and chargeId: {message.EntityId}");
+
+            var asset = await _assetGateway.GetAssetEstimateById(message.EntityTargetId)
+                ?? throw new ArgumentException($"Cannot load asset information entity from AssetInformationAPI for asset id: {message.EntityTargetId}");
+
+            var parentAssets = asset.AssetLocation?.ParentAssets;
+
+            if (parentAssets == null || !parentAssets.Any())
             {
-                var updatedCharge = await _chargesGateway.GetById(request.ChargeId, request.AssetId)
-                    ?? throw new ArgumentException($"Cannot load charge entity from Charges DynamoDB for asset id: {request.AssetId} and chargeId: {request.ChargeId}");
-
-                var asset = await _assetGateway.GetById(request.AssetId)
-                    ?? throw new ArgumentException($"Cannot load asset information entity from AssetInformationAPI for asset id: {request.AssetId}");
-
-                var parentAssets = asset.AssetLocation?.ParentAssets;
-
-                if (parentAssets == null || !parentAssets.Any())
-                {
-                    return;
-                }
-
-                var chargesToUpdate = Enumerable.Empty<Charge>();
-                foreach (var parentAsset in parentAssets)
-                {
-                    var chargesForParentAsset = await _chargesGateway.GetAllByAssetId(parentAsset.Id)
-                        ?? throw new ArgumentException($"Cannot load asset information entity from AssetInformationAPI for parent asset id: {parentAsset.Id}");
-
-                    chargesToUpdate = chargesToUpdate.Concat
-                    (
-                        chargesForParentAsset.Where(c => c.ChargeYear == updatedCharge.ChargeYear
-                                                      && c.ChargeSubGroup == updatedCharge.ChargeSubGroup)
-                    );
-                }
-
-                if (chargesToUpdate == null || !chargesToUpdate.Any())
-                {
-                    throw new ArgumentException($"Cannot load Charges from ChargesAPI for asset id: {asset.Id}");
-                }
-
-                var chargesDetails = chargesToUpdate.SelectMany(c => c.DetailedCharges);
-
-                foreach (var updatedChargeDetail in request.Details)
-                {
-                    var existingDetailsToUpdate = chargesDetails
-                        .Where(cd => cd.SubType == updatedChargeDetail.SubType &&
-                                     cd.ChargeType == updatedChargeDetail.ChargeType)
-                        .ToList();
-
-                    existingDetailsToUpdate.ForEach(cd =>
-                    {
-                        cd.Amount = updatedChargeDetail.Amount;
-                    });
-                }
-
-                var assetSummary = await _assetSummaryGateway.GetAssetSummaryByAssetIdAsync(request.AssetId);
-
-                // calc totals
-
-                var updatedAssetSummary = await _assetSummaryGateway.UpdateAssetSummaryAsync(request.AssetId, 0);
+                return;
             }
 
-            throw new ArgumentException(nameof(message.EventData.NewData));
+            var chargesToUpdate = Enumerable.Empty<Charge>();
+            foreach (var parentAsset in parentAssets)
+            {
+                var chargesForParentAsset = await _chargesGateway.GetAllByAssetId(parentAsset.Id)
+                    ?? throw new ArgumentException($"Cannot load asset information entity from AssetInformationAPI for parent asset id: {parentAsset.Id}");
+
+                chargesToUpdate = chargesToUpdate.Concat
+                (
+                    chargesForParentAsset.Where(c => c.ChargeYear == updatedCharge.ChargeYear
+                                                    && c.ChargeSubGroup == updatedCharge.ChargeSubGroup)
+                );
+            }
+
+            if (chargesToUpdate == null || !chargesToUpdate.Any())
+            {
+                throw new ArgumentException($"Cannot load Charges from ChargesAPI for asset id: {asset.Id}");
+            }
+
+            var chargesDetails = chargesToUpdate.SelectMany(c => c.DetailedCharges);
+
+            foreach (var updatedChargeDetail in updatedDetailedCharges)
+            {
+                var existingDetailsToUpdate = chargesDetails
+                    .Where(cd => cd.SubType == updatedChargeDetail.SubType &&
+                                    cd.ChargeType == updatedChargeDetail.ChargeType)
+                    .ToList();
+
+                existingDetailsToUpdate.ForEach(cd =>
+                {
+                    cd.Amount = updatedChargeDetail.NewAmount;
+                });
+            }
+
+            await _chargesGateway.SaveBatchAsync(chargesToUpdate.ToList());
+
+            var assetSummary = await _summaryApiHttpClient.GetAssetEstimate(message.EntityTargetId);
+
+            // Hanna Holasava
+            // What is no asset esimate summary was fount?
+            // Should we create new one?
+            if(assetSummary == null)
+            {
+                return;
+            }
+            decimal newTotalServiceCharges = assetSummary.TotalServiceCharges + GetServiceChargeDifference(updatedCharge, updatedDetailedCharges);
+
+            await _summaryApiHttpClient.UpdateTotalServiceCharges(message.EntityTargetId, newTotalServiceCharges);
+        }
+
+        private decimal GetServiceChargeDifference(Charge existingModel, List<DetailedChargeChange> detailedChargesToUpdate)
+        {
+            return existingModel.DetailedCharges
+                .Join(detailedChargesToUpdate,
+                    outer => new { outer.SubType, outer.ChargeType },
+                    inner => new { inner.SubType, inner.ChargeType },
+                    (old, updated)=> new { OldAmout = old.Amount, NewAmount = updated.NewAmount })
+                .Sum(_ => _.NewAmount - _.OldAmout);
         }
     }
 }

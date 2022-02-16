@@ -7,7 +7,7 @@ namespace FinanceChargesListener.Infrastructure
 {
     public class UpdateAssetSummary : IUpdateAssetSummary
     {
-        public Task<AssetSummary> UpdateAsync(Guid assetIwd, decimal totalServiceCharges)
+        public Task<AssetEstimateSummary> UpdateAsync(Guid assetIwd, decimal totalServiceCharges)
         {
             throw new NotImplementedException();
         }

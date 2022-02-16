@@ -2,7 +2,7 @@ using System;
 
 namespace FinanceChargesListener.Domain
 {
-    public class AssetSummary
+    public class AssetEstimateSummary
     {
         public Guid Id { get; set; }
 

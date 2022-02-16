@@ -50,9 +50,4 @@ namespace FinanceChargesListener.Domain
         Property,
         NA
     }
-
-    public enum SearchBy
-    {
-        ById, ByTargetId
-    }
 }

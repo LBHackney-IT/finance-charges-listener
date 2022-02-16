@@ -1,10 +1,16 @@
+using FinanceChargesListener.Domain.EventMessages;
 using System;
+using System.Collections.Generic;
 
 namespace FinanceChargesListener.Boundary
 {
     public class ChargesEventSns
     {
         public Guid Id { get; set; }
+
+        public Guid EntityId { get; set; }
+
+        public Guid EntityTargetId { get; set; }
 
         public string EventType { get; set; }
 
@@ -20,8 +26,11 @@ namespace FinanceChargesListener.Boundary
 
         public User User { get; set; }
 
-        public Guid EntityId { get; set; }
+        public ChargesEventData EventData { get; set; } = new ChargesEventData();
+    }
 
-        public EventData EventData { get; set; } = new EventData();
+    public class ChargesEventData
+    {
+        public List<DetailedChargeChange> NewData { get; set; }
     }
 }
