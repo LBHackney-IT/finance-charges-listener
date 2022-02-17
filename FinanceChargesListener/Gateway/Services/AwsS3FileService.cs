@@ -100,7 +100,7 @@ namespace FinanceChargesListener.Gateway.Services
             {
                 throw new Exception("Failed to update the file tag in S3", ex.InnerException);
             }
-           
+
         }
     }
 }
