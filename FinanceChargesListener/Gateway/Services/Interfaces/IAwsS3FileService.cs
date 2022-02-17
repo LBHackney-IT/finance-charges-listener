@@ -12,5 +12,6 @@ namespace FinanceChargesListener.Gateway.Services.Interfaces
         Task<string> UploadFile(IFormFile formFile, string fileName);
         Task<Stream> GetFile(string bucketName, string key);
         Task<bool> DeleteFile(string bucketName, string key);
+        Task<bool> UpdateFileTag(string bucketName, string key, string tagValue);
     }
 }

@@ -64,4 +64,10 @@ namespace FinanceChargesListener.Domain
         Property,
         NA
     }
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum ValuesType
+    {
+        Actual = 1,
+        Estimate = 2
+    }
 }

@@ -75,5 +75,32 @@ namespace FinanceChargesListener.Gateway.Services
                 throw new Exception("Failed to delete file in S3", ex.InnerException);
             }
         }
+
+        public async Task<bool> UpdateFileTag(string bucketName, string key, string tagValue)
+        {
+            Tagging newTagSet = new Tagging();
+            newTagSet.TagSet = new List<Tag>{
+                        new Tag { Key = Constants.TagKey, Value = tagValue}
+                    };
+            PutObjectTaggingRequest putObjTagsRequest = new PutObjectTaggingRequest()
+            {
+                BucketName = bucketName,
+                Key = key,
+                Tagging = newTagSet
+            };
+            try
+            {
+                var response = await _s3Client.PutObjectTaggingAsync(putObjTagsRequest);
+                if (response != null && !string.IsNullOrEmpty(response.VersionId))
+                    return true;
+                else
+                    return false;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Failed to update the file tag in S3", ex.InnerException);
+            }
+
+        }
     }
 }
