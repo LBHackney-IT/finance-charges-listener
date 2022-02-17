@@ -129,22 +129,34 @@ namespace FinanceChargesListener
         {
             context.Logger.LogLine($"Processing message {message.MessageId}");
 
-            
-            var eventJson = JsonSerializer.Serialize(eventModel, JsonOptions);
+            var eventJson = JsonSerializer.Serialize(message.Body, JsonOptions);
 
-            EntityEventSns entityEvent = JsonSerializer.Deserialize<ChargesEventSns>(eventJson, JsonOptions);
+            var entityEvent = JsonSerializer.Deserialize<EntityEventSns>(eventJson, JsonOptions);
             using (Logger.BeginScope("CorrelationId: {CorrelationId}", entityEvent.CorrelationId))
             {
                 try
                 {
-                    IMessageProcessing processor = entityEvent.EventType switch
+                    IMessageProcessing processor = null;
+
+                    switch (entityEvent.EventType)
                     {
-                        EventTypes.HeadOfChargeApplyEvent => ServiceProvider.GetService<ApplyHeadOfChargeUseCase>(),
-                        EventTypes.FileUploadEvent => ServiceProvider.GetService<IEstimateActualFileProcessUseCase>(),
-                        EventTypes.DwellingChargeUpdatedEvent => ServiceProvider.GetService<IUpdateChargesUseCase>(),
-                        _ => throw new ArgumentException(
-                            $"Unknown event type: {entityEvent.EventType} on message id: {message.MessageId}")
-                    };
+                        case EventTypes.DwellingChargeUpdatedEvent:
+                            entityEvent = JsonSerializer.Deserialize<ChargesEventSns>(eventJson, JsonOptions);
+                            processor = ServiceProvider.GetService<IUpdateChargesUseCase>();
+                            break;
+
+                        case EventTypes.HeadOfChargeApplyEvent:
+                            processor = ServiceProvider.GetService<ApplyHeadOfChargeUseCase>();
+                            break;
+
+                        case EventTypes.FileUploadEvent:
+                            processor = ServiceProvider.GetService<IEstimateActualFileProcessUseCase>();
+                            break;
+
+                        default:
+                            throw new ArgumentException(
+                            $"Unknown event type: {entityEvent.EventType} on message id: {message.MessageId}");
+                    }
 
                     await processor.ProcessMessageAsync(entityEvent, JsonOptions).ConfigureAwait(false);
                 }
