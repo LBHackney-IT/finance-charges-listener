@@ -24,5 +24,7 @@ namespace FinanceChargesListener.Domain
         public int TotalFreeholders { get; set; }
 
         public int TotalDwellings { get; set; }
+
+        public int TotalBlocks { get; set; }
     }
 }

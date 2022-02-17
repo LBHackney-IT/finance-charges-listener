@@ -8,8 +8,11 @@ namespace FinanceChargesListener.Domain
     {
         public string PropertyReferenceNumber { get; set; }
         public Guid AssetId { get; set; }
+        public string AssetAddress { get; set; }
         public string BlockId { get; set; }
+        public string BlockAddress { get; set; }
         public string EstateId { get; set; }
+        public string EstateAddress { get; set; }
         public string TenureType { get; set; }
         public decimal TotalCharge { get; set; }
         public decimal BlockCCTVMaintenanceAndMonitoring { get; set; }
