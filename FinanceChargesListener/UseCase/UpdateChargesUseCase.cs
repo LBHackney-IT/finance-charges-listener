@@ -96,7 +96,7 @@ namespace FinanceChargesListener.UseCase
             // Hanna Holasava
             // What is no asset esimate summary was fount?
             // Should we create new one?
-            if(assetSummary == null)
+            if (assetSummary == null)
             {
                 return;
             }
@@ -111,7 +111,7 @@ namespace FinanceChargesListener.UseCase
                 .Join(detailedChargesToUpdate,
                     outer => new { outer.SubType, outer.ChargeType },
                     inner => new { inner.SubType, inner.ChargeType },
-                    (old, updated)=> new { OldAmout = old.Amount, NewAmount = updated.NewAmount })
+                    (old, updated) => new { OldAmout = old.Amount, NewAmount = updated.NewAmount })
                 .Sum(_ => _.NewAmount - _.OldAmout);
         }
     }
