@@ -3,6 +3,7 @@ using FinanceChargesListener.Boundary;
 using FinanceChargesListener.Domain;
 using FinanceChargesListener.Gateway.Interfaces;
 using FinanceChargesListener.Gateway.Services.Interfaces;
+using FinanceChargesListener.Infrastructure.Interfaces;
 using FinanceChargesListener.UseCase.Interfaces;
 using FinanceChargesListener.UseCase.Utility;
 using Hackney.Shared.Asset.Domain;
@@ -14,7 +15,6 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using static FinanceChargesListener.Domain.Enums;
 
 namespace FinanceChargesListener.UseCase
 {
@@ -22,23 +22,24 @@ namespace FinanceChargesListener.UseCase
     {
         private readonly IAwsS3FileService _awsS3FileService;
         private readonly HousingSearchService _housingSearchService;
-        private readonly AssetInformationApiGateway _assetInformationApiGateway;
-        private readonly ChargesApiGateway _chargesApiGateway;
-        private readonly IFinancialSummaryService _financialSummaryService;
+        private readonly Gateway.Services.Interfaces.IAssetInformationApiGateway _assetInformationApiGateway;
+        private readonly IChargesApiGateway _chargesApiGateway;
+        private readonly IFinancialSummaryApiGateway _financialSummaryApiGateway;
         private readonly ILogger<EstimateActualFileProcessUseCase> _logger;
+
         public EstimateActualFileProcessUseCase(
             IAwsS3FileService awsS3FileService,
             HousingSearchService housingSearchService,
-            AssetInformationApiGateway assetInformationApiGateway,
-            ChargesApiGateway chargesApiGateway,
-            IFinancialSummaryService financialSummaryService,
+            Gateway.Services.Interfaces.IAssetInformationApiGateway assetInformationApiGateway,
+            IChargesApiGateway chargesApiGateway,
+            IFinancialSummaryApiGateway financialSummaryApiGateway,
             ILogger<EstimateActualFileProcessUseCase> logger)
         {
             _awsS3FileService = awsS3FileService;
             _housingSearchService = housingSearchService;
             _assetInformationApiGateway = assetInformationApiGateway;
             _chargesApiGateway = chargesApiGateway;
-            _financialSummaryService = financialSummaryService;
+            _financialSummaryApiGateway = financialSummaryApiGateway;
             _logger = logger;
         }
         public async Task ProcessMessageAsync(EntityEventSns message, JsonSerializerOptions jsonSerializerOptions)
@@ -135,8 +136,6 @@ namespace FinanceChargesListener.UseCase
 
                     _logger.LogDebug($"Assets List fetching completed and total assets fetched : {assetsList.Item1.Count}");
 
-
-
                     // Charges Transformation
                     _logger.LogDebug($"Starting UH numerical Asset Id transformation with Guid Asset Id");
                     estimatesActual.ForEach(item =>
@@ -152,9 +151,6 @@ namespace FinanceChargesListener.UseCase
                         else
                             item.AssetId = data.Id;
                     });
-
-
-
 
                     // Property Charges
                     _logger.LogDebug($"Starting Charges formation Process");
@@ -208,7 +204,7 @@ namespace FinanceChargesListener.UseCase
                         TotalFreeholders = freeholdersCount,
                         TotalLeaseholders = leaseholdersCount
                     };
-                    var loadSummaryResult = await _financialSummaryService.AddEstimateSummary(addSummaryRequest).ConfigureAwait(false);
+                    var loadSummaryResult = await _financialSummaryApiGateway.AddEstimateSummary(addSummaryRequest).ConfigureAwait(false);
 
                     _logger.LogDebug($"Charges loading Process completed with total record count loaded : {estimatesActual.Count}");
 

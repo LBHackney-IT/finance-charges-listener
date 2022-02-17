@@ -2,8 +2,6 @@ using FinanceChargesListener.Domain;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using static FinanceChargesListener.Domain.Enums;
 
 namespace FinanceChargesListener.UseCase.Utility
 {

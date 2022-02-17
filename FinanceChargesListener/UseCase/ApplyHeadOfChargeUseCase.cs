@@ -19,16 +19,16 @@ namespace FinanceChargesListener.UseCase
     public class ApplyHeadOfChargeUseCase : Interfaces.ApplyHeadOfChargeUseCase
     {
         private readonly HousingSearchService _housingSearchService;
-        private readonly ChargesApiGateway _chargesApiGateway;
-        private readonly AssetInformationApiGateway _assetInformationApiGateway;
+        private readonly IChargesApiGateway _chargesApiGateway;
+        private readonly Gateway.Services.Interfaces.IAssetInformationApiGateway _assetInformationApiGateway;
         private readonly AssetGateway _assetGateway;
         private readonly ChargesMaintenanceApiGateway _chargesMaintenanceApiGateway;
         private readonly IManagementFeeUseCase _managementFeeUseCase;
         private readonly ICommonMethodUseCase _commonMethodUseCase;
 
         public ApplyHeadOfChargeUseCase(HousingSearchService housingSearchService,
-            ChargesApiGateway chargesApiGateway,
-            AssetInformationApiGateway assetInformationApiGateway,
+            IChargesApiGateway chargesApiGateway,
+            Gateway.Services.Interfaces.IAssetInformationApiGateway assetInformationApiGateway,
             AssetGateway assetGateway,
             ChargesMaintenanceApiGateway chargesMaintenanceApiGateway,
             IManagementFeeUseCase managementFeeUseCase,

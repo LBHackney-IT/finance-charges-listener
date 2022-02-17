@@ -1,7 +1,6 @@
 using Amazon.DynamoDBv2.DataModel;
 using AutoFixture;
-using FinanceChargesListener.Infrastructure;
-using FinanceChargesListener.Infrastructure.Entity;
+using FinanceChargesListener.Infrastructure.Entities;
 using System;
 
 namespace FinanceChargesListener.Tests.E2ETests.Fixtures
@@ -32,7 +31,7 @@ namespace FinanceChargesListener.Tests.E2ETests.Fixtures
             if (disposing && !_disposed)
             {
                 if (null != DbEntity)
-                    _dbContext.DeleteAsync<DbEntity>(DbEntity.Id).GetAwaiter().GetResult();
+                    _dbContext.DeleteAsync<ChargeDbEntity>(DbEntity.Id).GetAwaiter().GetResult();
 
                 _disposed = true;
             }

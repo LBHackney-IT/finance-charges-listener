@@ -1,14 +1,12 @@
 using Amazon.Lambda.Core;
 using Amazon.Lambda.SQSEvents;
-using Amazon.XRay.Recorder.Handlers.AwsSdk;
 using FinanceChargesListener.Boundary;
 using FinanceChargesListener.Common;
+using FinanceChargesListener.Domain.EventMessages;
 using FinanceChargesListener.Gateway;
 using FinanceChargesListener.Gateway.Extensions;
-using FinanceChargesListener.Gateway.Interfaces;
-using FinanceChargesListener.Gateway.Services;
-using FinanceChargesListener.Gateway.Services.Interfaces;
 using FinanceChargesListener.Infrastructure;
+using FinanceChargesListener.Infrastructure.Interfaces;
 using FinanceChargesListener.UseCase;
 using FinanceChargesListener.UseCase.Interfaces;
 using Hackney.Core.Logging;
@@ -16,15 +14,18 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading.Tasks;
 using ApplyHeadOfChargeUseCase = FinanceChargesListener.UseCase.Interfaces.ApplyHeadOfChargeUseCase;
-using AssetInformationApiGateway = FinanceChargesListener.Gateway.Services.Interfaces.AssetInformationApiGateway;
-using ChargesApiGateway = FinanceChargesListener.Gateway.Interfaces.ChargesApiGateway;
+using IAssetInformationApiGateway = FinanceChargesListener.Gateway.Services.Interfaces.IAssetInformationApiGateway;
+using IChargesApiGateway = FinanceChargesListener.Gateway.Interfaces.IChargesApiGateway;
 using ChargesMaintenanceApiGateway = FinanceChargesListener.Gateway.Interfaces.ChargesMaintenanceApiGateway;
 using HousingSearchService = FinanceChargesListener.Gateway.Services.Interfaces.HousingSearchService;
+using FinanceChargesListener.Gateway.Services;
+using FinanceChargesListener.Gateway.Interfaces;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
@@ -43,6 +44,7 @@ namespace FinanceChargesListener
         /// region the Lambda function is executed in.
         /// </summary>
         public ChargesListener()
+
         { }
 
         /// <summary>
@@ -52,21 +54,22 @@ namespace FinanceChargesListener
         protected override void ConfigureServices(IServiceCollection services)
         {
             services.AddHttpClient();
-            services.AddScoped<ChargesApiGateway, Gateway.ChargesApiGateway>();
+            services.AddScoped<IChargesApiGateway, Gateway.ChargesApiGateway>();
             services.AddScoped<ChargesMaintenanceApiGateway, Gateway.ChargesMaintenanceApiGateway>();
 
             services.ConfigureAws();
             services.AddDefaultAWSOptions(Configuration.GetAWSOptions());
+
             services.AddScoped<ApplyHeadOfChargeUseCase, UseCase.ApplyHeadOfChargeUseCase>();
             services.AddScoped<IEstimateActualFileProcessUseCase, EstimateActualFileProcessUseCase>();
             services.AddScoped<IManagementFeeUseCase, ManagementFeeUseCase>();
             services.AddScoped<ICommonMethodUseCase, CommonMethodUseCase>();
             services.AddScoped<IProcessTenantsChargesUseCase, ProcessTenantsChargesUseCase>();
             services.AddScoped<IProcessLeaseholdChargesUseCase, ProcessLeaseholdChargesUseCase>();
-            var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+            services.AddScoped<IUpdateChargesUseCase, UpdateChargesUseCase>();
+
             services.AddAmazonS3(Configuration);
 
-            services.AddScoped<DbEntityGateway, DynamoDbEntityGateway>();
             services.AddHttpContextAccessor();
             RegisterGateways(services);
             base.ConfigureServices(services);
@@ -89,21 +92,15 @@ namespace FinanceChargesListener
 
             var assetInformationApiUrl = Environment.GetEnvironmentVariable("ASSET_INFORMATION_API_URL");
             var assetInformationApiToken = Environment.GetEnvironmentVariable("ASSET_INFORMATION_API_TOKEN");
-            services.AddHttpClient<AssetInformationApiGateway, Gateway.Services.AssetInformationApiGateway>(c =>
+            services.AddHttpClient<IAssetInformationApiGateway, AssetInformationApiGateway>(c =>
             {
                 c.BaseAddress = new Uri(assetInformationApiUrl);
                 c.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(assetInformationApiToken);
             })
             .AddHttpMessageHandler<LoggingDelegatingHandler>();
 
-            var financialSummaryApiUrl = Environment.GetEnvironmentVariable("FINANCIAL_SUMMARY_API_URL");
-
-            services.AddHttpClient<IFinancialSummaryService, FinancialSummaryService>(c =>
-            {
-                c.BaseAddress = new Uri(financialSummaryApiUrl);
-                c.Timeout = TimeSpan.FromSeconds(30);
-            })
-           .AddHttpMessageHandler<LoggingDelegatingHandler>();
+            services.AddHttpClient<IFinancialSummaryApiGateway, FinancialSummaryApiGateway>()
+                .AddHttpMessageHandler<LoggingDelegatingHandler>();
         }
         /// <summary>
         /// This method is called for every Lambda invocation. This method takes in an SQS event object and can be used 
@@ -132,18 +129,34 @@ namespace FinanceChargesListener
         {
             context.Logger.LogLine($"Processing message {message.MessageId}");
 
-            var entityEvent = JsonSerializer.Deserialize<EntityEventSns>(message.Body, JsonOptions);
+            var eventJson = JsonSerializer.Serialize(message.Body, JsonOptions);
+
+            var entityEvent = JsonSerializer.Deserialize<EntityEventSns>(eventJson, JsonOptions);
             using (Logger.BeginScope("CorrelationId: {CorrelationId}", entityEvent.CorrelationId))
             {
                 try
                 {
-                    MessageProcessing processor = entityEvent.EventType switch
+                    IMessageProcessing processor = null;
+
+                    switch (entityEvent.EventType)
                     {
-                        EventTypes.HeadOfChargeApplyEvent => ServiceProvider.GetService<ApplyHeadOfChargeUseCase>(),
-                        EventTypes.FileUploadEvent => ServiceProvider.GetService<IEstimateActualFileProcessUseCase>(),
-                        _ => throw new ArgumentException(
-                            $"Unknown event type: {entityEvent.EventType} on message id: {message.MessageId}")
-                    };
+                        case EventTypes.DwellingChargeUpdatedEvent:
+                            entityEvent = JsonSerializer.Deserialize<ChargesEventSns>(eventJson, JsonOptions);
+                            processor = ServiceProvider.GetService<IUpdateChargesUseCase>();
+                            break;
+
+                        case EventTypes.HeadOfChargeApplyEvent:
+                            processor = ServiceProvider.GetService<ApplyHeadOfChargeUseCase>();
+                            break;
+
+                        case EventTypes.FileUploadEvent:
+                            processor = ServiceProvider.GetService<IEstimateActualFileProcessUseCase>();
+                            break;
+
+                        default:
+                            throw new ArgumentException(
+                            $"Unknown event type: {entityEvent.EventType} on message id: {message.MessageId}");
+                    }
 
                     await processor.ProcessMessageAsync(entityEvent, JsonOptions).ConfigureAwait(false);
                 }
