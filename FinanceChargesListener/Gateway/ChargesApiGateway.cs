@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace FinanceChargesListener.Gateway
 {
-    public class ChargesApiGateway : Interfaces.ChargesApiGateway
+    public class ChargesApiGateway : Interfaces.IChargesApiGateway
     {
         private readonly IDynamoDBContext _dynamoDbContext;
         private readonly IAmazonDynamoDB _amazonDynamoDb;

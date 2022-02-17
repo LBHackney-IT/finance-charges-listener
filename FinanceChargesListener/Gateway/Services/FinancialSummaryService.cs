@@ -11,7 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace FinanceChargesListener.Gateway.Services
-{
+{ }
     //public class FinancialSummaryService : IFinancialSummaryService
     //{
     //    private readonly HttpClient _client;
@@ -23,4 +23,4 @@ namespace FinanceChargesListener.Gateway.Services
     //    }
        
     //}
-}
+//}

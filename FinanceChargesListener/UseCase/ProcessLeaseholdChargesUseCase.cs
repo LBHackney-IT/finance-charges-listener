@@ -12,9 +12,9 @@ namespace FinanceChargesListener.UseCase
 {
     public class ProcessLeaseholdChargesUseCase : IProcessLeaseholdChargesUseCase
     {
-        private readonly ChargesApiGateway _chargesApiGateway;
+        private readonly IChargesApiGateway _chargesApiGateway;
 
-        public ProcessLeaseholdChargesUseCase(ChargesApiGateway chargesApiGateway)
+        public ProcessLeaseholdChargesUseCase(IChargesApiGateway chargesApiGateway)
         {
             _chargesApiGateway = chargesApiGateway;
         }

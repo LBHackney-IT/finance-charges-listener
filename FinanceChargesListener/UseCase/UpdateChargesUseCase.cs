@@ -2,9 +2,11 @@ using FinanceChargesListener.Boundary;
 using FinanceChargesListener.Domain;
 using FinanceChargesListener.Domain.EventMessages;
 using FinanceChargesListener.Gateway.Interfaces;
+using FinanceChargesListener.Gateway.Services.Interfaces;
 using FinanceChargesListener.Infrastructure.Interfaces;
 using FinanceChargesListener.UseCase.Interfaces;
 using Hackney.Core.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,11 +18,11 @@ namespace FinanceChargesListener.UseCase
     public class UpdateChargesUseCase : IUpdateChargesUseCase
     {
         private readonly IAssetInformationApiGateway _assetGateway;
-        private readonly IChargesGateway _chargesGateway;
+        private readonly IChargesApiGateway _chargesGateway;
         private readonly IFinancialSummaryApiGateway _summaryApiHttpClient;
 
         public UpdateChargesUseCase(IAssetInformationApiGateway assetGateway,
-                                    IChargesGateway chargesGateway,
+                                    IChargesApiGateway chargesGateway,
                                     IFinancialSummaryApiGateway summaryApiHttpClient)
         {
             _assetGateway = assetGateway;
@@ -41,12 +43,13 @@ namespace FinanceChargesListener.UseCase
                 throw new ArgumentException("Event message format is invalid!");
             }
 
-            List<DetailedChargeChange> updatedDetailedCharges = (List<DetailedChargeChange>) message.EventData.NewData;
+            string s = message.EventData.NewData.ToString();
+            List<DetailedChargeChange> updatedDetailedCharges = JsonConvert.DeserializeObject<List<DetailedChargeChange>>(s);
 
             var updatedCharge = await _chargesGateway.GetById(message.EntityId, chargeEventMessage.EntityTargetId)
                 ?? throw new ArgumentException($"Cannot load charge entity from Charges DynamoDB for asset id: {chargeEventMessage.EntityTargetId} and chargeId: {message.EntityId}");
 
-            var asset = await _assetGateway.GetAssetEstimateById(chargeEventMessage.EntityTargetId)
+            var asset = await _assetGateway.GetAssetByIdAsync(chargeEventMessage.EntityTargetId)
                 ?? throw new ArgumentException($"Cannot load asset information entity from AssetInformationAPI for asset id: {chargeEventMessage.EntityTargetId}");
 
             var parentAssets = asset.AssetLocation?.ParentAssets;
@@ -59,7 +62,7 @@ namespace FinanceChargesListener.UseCase
             var chargesToUpdate = Enumerable.Empty<Charge>();
             foreach (var parentAsset in parentAssets)
             {
-                var chargesForParentAsset = await _chargesGateway.GetAllByAssetId(parentAsset.Id)
+                var chargesForParentAsset = await _chargesGateway.GetChargeByTargetIdAsync(parentAsset.Id).ConfigureAwait(false)
                     ?? throw new ArgumentException($"Cannot load asset information entity from AssetInformationAPI for parent asset id: {parentAsset.Id}");
 
                 chargesToUpdate = chargesToUpdate.Concat

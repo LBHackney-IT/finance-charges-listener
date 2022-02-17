@@ -20,10 +20,12 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading.Tasks;
 using ApplyHeadOfChargeUseCase = FinanceChargesListener.UseCase.Interfaces.ApplyHeadOfChargeUseCase;
-using AssetInformationApiGateway = FinanceChargesListener.Gateway.Services.Interfaces.AssetInformationApiGateway;
-using ChargesApiGateway = FinanceChargesListener.Gateway.Interfaces.ChargesApiGateway;
+using IAssetInformationApiGateway = FinanceChargesListener.Gateway.Services.Interfaces.IAssetInformationApiGateway;
+using IChargesApiGateway = FinanceChargesListener.Gateway.Interfaces.IChargesApiGateway;
 using ChargesMaintenanceApiGateway = FinanceChargesListener.Gateway.Interfaces.ChargesMaintenanceApiGateway;
 using HousingSearchService = FinanceChargesListener.Gateway.Services.Interfaces.HousingSearchService;
+using FinanceChargesListener.Gateway.Services;
+using FinanceChargesListener.Gateway.Interfaces;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
@@ -52,7 +54,7 @@ namespace FinanceChargesListener
         protected override void ConfigureServices(IServiceCollection services)
         {
             services.AddHttpClient();
-            services.AddScoped<ChargesApiGateway, Gateway.ChargesApiGateway>();
+            services.AddScoped<IChargesApiGateway, Gateway.ChargesApiGateway>();
             services.AddScoped<ChargesMaintenanceApiGateway, Gateway.ChargesMaintenanceApiGateway>();
 
             services.ConfigureAws();
@@ -90,7 +92,7 @@ namespace FinanceChargesListener
 
             var assetInformationApiUrl = Environment.GetEnvironmentVariable("ASSET_INFORMATION_API_URL");
             var assetInformationApiToken = Environment.GetEnvironmentVariable("ASSET_INFORMATION_API_TOKEN");
-            services.AddHttpClient<AssetInformationApiGateway, Gateway.Services.AssetInformationApiGateway>(c =>
+            services.AddHttpClient<IAssetInformationApiGateway, AssetInformationApiGateway>(c =>
             {
                 c.BaseAddress = new Uri(assetInformationApiUrl);
                 c.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(assetInformationApiToken);
@@ -127,36 +129,10 @@ namespace FinanceChargesListener
         {
             context.Logger.LogLine($"Processing message {message.MessageId}");
 
-            // Hanna Holasava
-            // This is only for testing.
-            // Needs to be removed!
-            ChargesEventSns eventModel = new ChargesEventSns
-            {
-                EntityId = Guid.Parse("bd69764c-6776-487b-9ba6-fe0843356f1a"),
-                EntityTargetId = Guid.Parse("0fe23051-96e7-1b17-4614-fd3550192c87"),
-                EventType = "DwellingChargeUpdatedEvent",
-                EventData = new EventData
-                {
-                    NewData = new List<DetailedChargeChange>
-                    {
-                        new DetailedChargeChange
-                        {
-                            ChargeType = Domain.ChargeType.Property,
-                            NewAmount = 100,
-                            SubType = "Ground rent"
-                        },
-                        new DetailedChargeChange
-                        {
-                            SubType = "Estates Cleaning",
-                            ChargeType = Domain.ChargeType.Estate,
-                            NewAmount = 1000
-                        }
-                    }
-                }
-            };
+            
             var eventJson = JsonSerializer.Serialize(eventModel, JsonOptions);
 
-            var entityEvent = JsonSerializer.Deserialize<EntityEventSns>(eventJson, JsonOptions);
+            EntityEventSns entityEvent = JsonSerializer.Deserialize<ChargesEventSns>(eventJson, JsonOptions);
             using (Logger.BeginScope("CorrelationId: {CorrelationId}", entityEvent.CorrelationId))
             {
                 try

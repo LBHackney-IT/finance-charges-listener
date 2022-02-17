@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace FinanceChargesListener.Gateway.Interfaces
 {
-    public interface ChargesApiGateway
+    public interface IChargesApiGateway
     {
         Task<List<Charge>> GetChargeByTargetIdAsync(Guid id);
         Task AddChargeAsync(Charge charge);

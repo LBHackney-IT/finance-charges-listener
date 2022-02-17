@@ -22,16 +22,16 @@ namespace FinanceChargesListener.UseCase
     {
         private readonly IAwsS3FileService _awsS3FileService;
         private readonly HousingSearchService _housingSearchService;
-        private readonly AssetInformationApiGateway _assetInformationApiGateway;
-        private readonly ChargesApiGateway _chargesApiGateway;
+        private readonly Gateway.Services.Interfaces.IAssetInformationApiGateway _assetInformationApiGateway;
+        private readonly IChargesApiGateway _chargesApiGateway;
         private readonly IFinancialSummaryApiGateway _financialSummaryApiGateway;
         private readonly ILogger<EstimateActualFileProcessUseCase> _logger;
 
         public EstimateActualFileProcessUseCase(
             IAwsS3FileService awsS3FileService,
             HousingSearchService housingSearchService,
-            AssetInformationApiGateway assetInformationApiGateway,
-            ChargesApiGateway chargesApiGateway,
+            Gateway.Services.Interfaces.IAssetInformationApiGateway assetInformationApiGateway,
+            IChargesApiGateway chargesApiGateway,
             IFinancialSummaryApiGateway financialSummaryApiGateway,
             ILogger<EstimateActualFileProcessUseCase> logger)
         {

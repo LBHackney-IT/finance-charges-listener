@@ -1,15 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
-using FinanceChargesListener.Domain;
 using FinanceChargesListener.Gateway.Extensions;
 using Hackney.Shared.Asset.Domain;
+using System;
+using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace FinanceChargesListener.Gateway.Services
 {
-    public class AssetInformationApiGateway : Interfaces.AssetInformationApiGateway
+    public class AssetInformationApiGateway : Interfaces.IAssetInformationApiGateway
     {
         private readonly HttpClient _client;
 
