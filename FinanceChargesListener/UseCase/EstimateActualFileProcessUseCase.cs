@@ -196,11 +196,11 @@ namespace FinanceChargesListener.UseCase
 
                         // Financial Summary Load
                         // Block Summary Load
-                        var blockSummaries = GetAssetSummariesByType(blockGroup, blockListResult, estimatesActual, TargetType.Block, chargeYear);
+                        var blockSummaries = GetAssetSummariesByType(blockGroup, blockListResult, estimatesActual, TargetType.Block, chargeYear, chargeSubGroup);
                         var blockSummaryLoadResult = await _financialSummaryService.AddEstimateActualSummaryBatch(blockSummaries.ToList()).ConfigureAwait(false);
 
                         // Estate Summary Load
-                        var estateSumaries = GetAssetSummariesByType(estateGroup, estateListResult, estimatesActual, TargetType.Estate, chargeYear);
+                        var estateSumaries = GetAssetSummariesByType(estateGroup, estateListResult, estimatesActual, TargetType.Estate, chargeYear, chargeSubGroup);
                         var estateSummaryLoadResult = await _financialSummaryService.AddEstimateActualSummaryBatch(estateSumaries.ToList()).ConfigureAwait(false);
 
                         // Hackney Total Summary Load
@@ -218,7 +218,8 @@ namespace FinanceChargesListener.UseCase
                             TotalServiceCharges = totalEstimateCharge,
                             TotalDwellings = estimatesActual.Count,
                             TotalFreeholders = freeholdersCount,
-                            TotalLeaseholders = leaseholdersCount
+                            TotalLeaseholders = leaseholdersCount,
+                            ValuesType = Enum.Parse<ValuesType>(chargeSubGroup)
                         };
                         var loadSummaryResult = await _financialSummaryService.AddEstimateSummary(addSummaryRequest).ConfigureAwait(false);
 
@@ -257,7 +258,7 @@ namespace FinanceChargesListener.UseCase
         }
 
         private List<AddAssetSummaryRequest> GetAssetSummariesByType(List<IGrouping<string, EstimateActualCharge>> assetsGroup,
-          List<Asset> assetListResult, List<EstimateActualCharge> excelData, TargetType targetType, short chargeYear)
+          List<Asset> assetListResult, List<EstimateActualCharge> excelData, TargetType targetType, short chargeYear, string type)
         {
             var summaries = new List<AddAssetSummaryRequest>();
             foreach (var item in assetsGroup)
@@ -292,7 +293,8 @@ namespace FinanceChargesListener.UseCase
                         TotalDwellings = totalDwellingCount,
                         TotalFreeholders = totalFreeholderCount,
                         TotalLeaseholders = totalLeaseholderCount,
-                        TotalBlocks = targetType == TargetType.Estate ? totalBlockGroup.Count : 0
+                        TotalBlocks = targetType == TargetType.Estate ? totalBlockGroup.Count : 0,
+                        ValuesType = Enum.Parse<ValuesType>(type)
                     };
                     summaries.Add(addSummary);
                 }
