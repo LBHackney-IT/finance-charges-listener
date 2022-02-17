@@ -26,6 +26,7 @@ using ChargesMaintenanceApiGateway = FinanceChargesListener.Gateway.Interfaces.C
 using HousingSearchService = FinanceChargesListener.Gateway.Services.Interfaces.HousingSearchService;
 using FinanceChargesListener.Gateway.Services;
 using FinanceChargesListener.Gateway.Interfaces;
+using FinanceChargesListener.Gateway.Services.Interfaces;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
@@ -96,6 +97,15 @@ namespace FinanceChargesListener
             {
                 c.BaseAddress = new Uri(assetInformationApiUrl);
                 c.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(assetInformationApiToken);
+            })
+            .AddHttpMessageHandler<LoggingDelegatingHandler>();
+
+            var financialSummaryApiUrl = Environment.GetEnvironmentVariable("FINANCIAL_SUMMARY_API_URL");
+
+            services.AddHttpClient<IFinancialSummaryService, FinancialSummaryService>(c =>
+            {
+                c.BaseAddress = new Uri(financialSummaryApiUrl);
+                c.Timeout = TimeSpan.FromSeconds(30);
             })
             .AddHttpMessageHandler<LoggingDelegatingHandler>();
 
