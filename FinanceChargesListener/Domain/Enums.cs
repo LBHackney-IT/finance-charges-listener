@@ -17,6 +17,13 @@ namespace FinanceChargesListener.Domain
     }
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum ChargeFrequency
+    {
+        Monthly,
+        Weekly
+    }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum TargetType
     {
         Block,
@@ -40,6 +47,13 @@ namespace FinanceChargesListener.Domain
         OutBuilding,
         TerracedBlock,
         WalkUpBlock
+    }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum ChargeMaintenanceStatus
+    {
+        Pending,
+        Applied
     }
 
     [JsonConverter(typeof(JsonStringEnumConverter))]

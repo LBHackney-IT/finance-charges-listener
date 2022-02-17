@@ -8,6 +8,7 @@ using Hackney.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace FinanceChargesListener.UseCase
@@ -28,20 +29,25 @@ namespace FinanceChargesListener.UseCase
         }
 
         [LogCall]
-        public async Task ProcessMessageAsync(ChargesEventSns message)
+        public async Task ProcessMessageAsync(EntityEventSns message, JsonSerializerOptions jsonSerializerOptions)
         {
             if (message is null)
             {
                 throw new ArgumentNullException(nameof(message));
             }
 
-            List<DetailedChargeChange> updatedDetailedCharges = message.EventData.NewData;
+            if (!(message is ChargesEventSns chargeEventMessage))
+            {
+                throw new ArgumentException("Event message format is invalid!");
+            }
 
-            var updatedCharge = await _chargesGateway.GetById(message.EntityId, message.EntityTargetId)
-                ?? throw new ArgumentException($"Cannot load charge entity from Charges DynamoDB for asset id: {message.EntityTargetId} and chargeId: {message.EntityId}");
+            List<DetailedChargeChange> updatedDetailedCharges = (List<DetailedChargeChange>) message.EventData.NewData;
 
-            var asset = await _assetGateway.GetAssetEstimateById(message.EntityTargetId)
-                ?? throw new ArgumentException($"Cannot load asset information entity from AssetInformationAPI for asset id: {message.EntityTargetId}");
+            var updatedCharge = await _chargesGateway.GetById(message.EntityId, chargeEventMessage.EntityTargetId)
+                ?? throw new ArgumentException($"Cannot load charge entity from Charges DynamoDB for asset id: {chargeEventMessage.EntityTargetId} and chargeId: {message.EntityId}");
+
+            var asset = await _assetGateway.GetAssetEstimateById(chargeEventMessage.EntityTargetId)
+                ?? throw new ArgumentException($"Cannot load asset information entity from AssetInformationAPI for asset id: {chargeEventMessage.EntityTargetId}");
 
             var parentAssets = asset.AssetLocation?.ParentAssets;
 
@@ -85,7 +91,7 @@ namespace FinanceChargesListener.UseCase
 
             await _chargesGateway.SaveBatchAsync(chargesToUpdate.ToList());
 
-            var assetSummary = await _summaryApiHttpClient.GetAssetEstimate(message.EntityTargetId);
+            var assetSummary = await _summaryApiHttpClient.GetAssetEstimate(chargeEventMessage.EntityTargetId);
 
             // Hanna Holasava
             // What is no asset esimate summary was fount?
@@ -96,7 +102,7 @@ namespace FinanceChargesListener.UseCase
             }
             decimal newTotalServiceCharges = assetSummary.TotalServiceCharges + GetServiceChargeDifference(updatedCharge, updatedDetailedCharges);
 
-            await _summaryApiHttpClient.UpdateTotalServiceCharges(message.EntityTargetId, newTotalServiceCharges);
+            await _summaryApiHttpClient.UpdateTotalServiceCharges(chargeEventMessage.EntityTargetId, newTotalServiceCharges);
         }
 
         private decimal GetServiceChargeDifference(Charge existingModel, List<DetailedChargeChange> detailedChargesToUpdate)

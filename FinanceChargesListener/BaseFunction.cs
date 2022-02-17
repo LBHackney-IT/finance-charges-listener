@@ -28,7 +28,7 @@ namespace FinanceChargesListener
     [ExcludeFromCodeCoverage]
     public abstract class BaseFunction
     {
-        protected readonly static JsonSerializerOptions _jsonOptions = JsonOptions.CreateJsonOptions();
+        protected readonly static JsonSerializerOptions JsonOptions = Infrastructure.JsonOptions.CreateJsonOptions();
 
         protected IConfigurationRoot Configuration { get; }
         protected IServiceProvider ServiceProvider { get; }
@@ -44,14 +44,6 @@ namespace FinanceChargesListener
             Configure(builder);
             Configuration = builder.Build();
             services.AddSingleton<IConfiguration>(Configuration);
-
-            services.AddHttpClient<IFinancialSummaryApiGateway, FinancialSummaryApiGateway>();
-
-            services.AddScoped<IAssetInformationApiGateway, AssetInformationApiGateway>();
-            services.AddScoped<IChargesGateway, ChargesDbGateway>();
-            services.AddScoped<IFinancialSummaryApiGateway, FinancialSummaryApiGateway>();
-
-            services.AddScoped<IUpdateChargesUseCase, UpdateChargesUseCase>();
 
             services.ConfigureLambdaLogging(Configuration);
             services.AddLogCallAspect();

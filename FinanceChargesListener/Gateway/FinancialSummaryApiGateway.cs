@@ -1,4 +1,5 @@
 using FinanceChargesListener.Domain;
+using FinanceChargesListener.Gateway.Extensions;
 using FinanceChargesListener.Infrastructure.Interfaces;
 using Hackney.Core.Logging;
 using Microsoft.AspNetCore.JsonPatch;
@@ -74,6 +75,16 @@ namespace FinanceChargesListener.Gateway
                 var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 throw new Exception($"Unexpected status code from Financial Summary API while sending PATCH request: {response.StatusCode} - {responseBody}");
             }
+        }
+
+        [LogCall]
+        public async Task<bool> AddEstimateSummary(AddAssetSummaryRequest addAssetSummaryRequest)
+        {
+            var isRequestSuccess = await _httpClient
+                .PostAsJsonAsyncType(new Uri("api/v1/asset-summary", UriKind.Relative), addAssetSummaryRequest)
+                .ConfigureAwait(false);
+
+            return isRequestSuccess;
         }
     }
 }

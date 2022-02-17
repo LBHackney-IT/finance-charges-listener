@@ -9,5 +9,7 @@ namespace FinanceChargesListener.Infrastructure.Interfaces
         Task<AssetEstimateSummary> GetAssetEstimate(Guid assetId);
 
         Task UpdateTotalServiceCharges(Guid assetId, decimal newTotalServiceCharges);
+
+        Task<bool> AddEstimateSummary(AddAssetSummaryRequest addAssetSummaryRequest);
     }
 }

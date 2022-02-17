@@ -9,11 +9,6 @@ namespace FinanceChargesListener.Infrastructure
 {
     public static class QueryResponseExtension
     {
-        public static Asset ToAsset(this QueryResponse response)
-        {
-            throw new NotImplementedException();
-        }
-
         public static List<Charge> ToCharge(this QueryResponse response)
         {
             var chargesList = new List<Charge>();
