@@ -3,9 +3,8 @@ using FinanceChargesListener.Domain;
 using Hackney.Core.DynamoDb.Converters;
 using System;
 using System.Collections.Generic;
-using static FinanceChargesListener.Domain.Enums;
 
-namespace FinanceChargesListener.Infrastructure.Entity
+namespace FinanceChargesListener.Infrastructure.Entities
 {
     [DynamoDBTable("Charges", LowerCamelCaseProperties = true)]
     public class ChargeDbEntity
@@ -22,6 +21,9 @@ namespace FinanceChargesListener.Infrastructure.Entity
         [DynamoDBProperty(AttributeName = "charge_group", Converter = typeof(DynamoDbEnumConverter<ChargeGroup>))]
         public ChargeGroup ChargeGroup { get; set; }
 
+        /// <summary>
+        /// Required only for ChargeGroup = Leaseholders
+        /// </summary>
         [DynamoDBProperty(AttributeName = "charge_sub_group", Converter = typeof(DynamoDbEnumConverter<ChargeSubGroup>))]
         public ChargeSubGroup? ChargeSubGroup { get; set; }
 
@@ -41,6 +43,6 @@ namespace FinanceChargesListener.Infrastructure.Entity
         public DateTime CreatedAt { get; set; }
 
         [DynamoDBProperty(AttributeName = "last_updated_at", Converter = typeof(DynamoDbDateTimeConverter))]
-        public DateTime LastUpdatedAt { get; set; }
+        public DateTime? LastUpdatedAt { get; set; }
     }
 }

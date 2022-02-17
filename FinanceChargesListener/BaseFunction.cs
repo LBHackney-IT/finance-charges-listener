@@ -1,7 +1,13 @@
+
 using Amazon.XRay.Recorder.Core;
 using Amazon.XRay.Recorder.Core.Strategies;
 using Amazon.XRay.Recorder.Handlers.AwsSdk;
+using FinanceChargesListener.Gateway;
+using FinanceChargesListener.Gateway.Interfaces;
 using FinanceChargesListener.Infrastructure;
+using FinanceChargesListener.Infrastructure.Interfaces;
+using FinanceChargesListener.UseCase;
+using FinanceChargesListener.UseCase.Interfaces;
 using Hackney.Core.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

@@ -3,20 +3,24 @@ using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.Model;
 using FinanceChargesListener.Domain;
 using FinanceChargesListener.Factories;
-using FinanceChargesListener.Gateway.Interfaces;
 using FinanceChargesListener.Infrastructure;
+using FinanceChargesListener.Infrastructure.Entities;
+using Hackney.Core.Logging;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace FinanceChargesListener.Gateway
 {
-    public class ChargesApiGateway : Interfaces.ChargesApiGateway
+    public class ChargesApiGateway : Interfaces.IChargesApiGateway
     {
         private readonly IDynamoDBContext _dynamoDbContext;
         private readonly IAmazonDynamoDB _amazonDynamoDb;
         private readonly ILogger<ChargesApiGateway> _logger;
+
+        public const int PerBatchProcessingCount = 25;
 
         public ChargesApiGateway(IDynamoDBContext dynamoDbContext, IAmazonDynamoDB amazonDynamoDb,
             ILogger<ChargesApiGateway> logger)
@@ -26,6 +30,7 @@ namespace FinanceChargesListener.Gateway
             _logger = logger;
         }
 
+        [LogCall]
         public async Task AddChargeAsync(Charge charge)
         {
             var chargeDbEntity = charge.ToDatabase();
@@ -34,6 +39,7 @@ namespace FinanceChargesListener.Gateway
             await _dynamoDbContext.SaveAsync(chargeDbEntity).ConfigureAwait(false);
         }
 
+        [LogCall]
         public async Task<List<Charge>> GetChargeByTargetIdAsync(Guid targetId)
         {
             var request = new QueryRequest
@@ -49,9 +55,10 @@ namespace FinanceChargesListener.Gateway
 
             var chargesLists = await _amazonDynamoDb.QueryAsync(request).ConfigureAwait(false);
 
-            return chargesLists?.ToChargeDomain();
+            return chargesLists?.ToCharge();
         }
 
+        [LogCall]
         public async Task UpdateChargeAsync(Charge charge)
         {
             var chargeDbEntity = charge.ToDatabase();
@@ -60,6 +67,7 @@ namespace FinanceChargesListener.Gateway
             await _dynamoDbContext.SaveAsync(chargeDbEntity).ConfigureAwait(false);
         }
 
+        [LogCall]
         public async Task<bool> AddTransactionBatchAsync(List<Charge> charges)
         {
             bool result = false;
@@ -111,6 +119,40 @@ namespace FinanceChargesListener.Gateway
                 throw new Exception(e.Message);
             }
             return result;
+        }
+
+        [LogCall]
+        public async Task<Charge> GetById(Guid chargeId, Guid assetId)
+        {
+            var result = await _dynamoDbContext.LoadAsync<ChargeDbEntity>(assetId, chargeId).ConfigureAwait(false);
+
+            return result?.ToDomain();
+        }
+
+        [LogCall]
+        public async Task<bool> SaveBatchAsync(List<Charge> charges)
+        {
+            var chargesBatch = _dynamoDbContext.CreateBatchWrite<ChargeDbEntity>();
+
+            var items = charges.ToDatabaseList();
+            var maxBatchCount = PerBatchProcessingCount;
+            if (items.Count > maxBatchCount)
+            {
+                var loopCount = (items.Count / maxBatchCount) + 1;
+                for (var start = 0; start < loopCount; start++)
+                {
+                    var itemsToWrite = items.Skip(start * maxBatchCount).Take(maxBatchCount);
+                    chargesBatch.AddPutItems(itemsToWrite);
+                    await chargesBatch.ExecuteAsync().ConfigureAwait(false);
+                }
+            }
+            else
+            {
+                chargesBatch.AddPutItems(items);
+                await chargesBatch.ExecuteAsync().ConfigureAwait(false);
+            }
+
+            return true;
         }
     }
 }

@@ -4,6 +4,7 @@ using FinanceChargesListener.Boundary;
 using FinanceChargesListener.Domain;
 using FinanceChargesListener.Gateway.Interfaces;
 using FinanceChargesListener.Gateway.Services.Interfaces;
+using FinanceChargesListener.Infrastructure.Interfaces;
 using FinanceChargesListener.UseCase.Interfaces;
 using FinanceChargesListener.UseCase.Utility;
 using Hackney.Shared.Asset.Domain;
@@ -15,7 +16,6 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using static FinanceChargesListener.Domain.Enums;
 
 namespace FinanceChargesListener.UseCase
 {
@@ -23,23 +23,24 @@ namespace FinanceChargesListener.UseCase
     {
         private readonly IAwsS3FileService _awsS3FileService;
         private readonly HousingSearchService _housingSearchService;
-        private readonly AssetInformationApiGateway _assetInformationApiGateway;
-        private readonly ChargesApiGateway _chargesApiGateway;
-        private readonly IFinancialSummaryService _financialSummaryService;
+        private readonly Gateway.Services.Interfaces.IAssetInformationApiGateway _assetInformationApiGateway;
+        private readonly IChargesApiGateway _chargesApiGateway;
+        private readonly IFinancialSummaryApiGateway _financialSummaryApiGateway;
         private readonly ILogger<EstimateActualFileProcessUseCase> _logger;
+
         public EstimateActualFileProcessUseCase(
             IAwsS3FileService awsS3FileService,
             HousingSearchService housingSearchService,
-            AssetInformationApiGateway assetInformationApiGateway,
-            ChargesApiGateway chargesApiGateway,
-            IFinancialSummaryService financialSummaryService,
+            Gateway.Services.Interfaces.IAssetInformationApiGateway assetInformationApiGateway,
+            IChargesApiGateway chargesApiGateway,
+            IFinancialSummaryApiGateway financialSummaryApiGateway,
             ILogger<EstimateActualFileProcessUseCase> logger)
         {
             _awsS3FileService = awsS3FileService;
             _housingSearchService = housingSearchService;
             _assetInformationApiGateway = assetInformationApiGateway;
             _chargesApiGateway = chargesApiGateway;
-            _financialSummaryService = financialSummaryService;
+            _financialSummaryApiGateway = financialSummaryApiGateway;
             _logger = logger;
         }
         public async Task ProcessMessageAsync(EntityEventSns message, JsonSerializerOptions jsonSerializerOptions)

@@ -4,8 +4,6 @@ using Hackney.Shared.Asset.Factories;
 using Hackney.Shared.Asset.Infrastructure;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace FinanceChargesListener.Gateway

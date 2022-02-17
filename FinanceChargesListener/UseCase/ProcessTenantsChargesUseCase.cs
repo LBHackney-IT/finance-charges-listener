@@ -1,24 +1,21 @@
 using FinanceChargesListener.Boundary;
 using FinanceChargesListener.Domain;
-using FinanceChargesListener.Factories;
 using FinanceChargesListener.Gateway.Interfaces;
 using FinanceChargesListener.UseCase.Interfaces;
 using Hackney.Shared.Asset.Domain;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using static FinanceChargesListener.Domain.Enums;
 
 namespace FinanceChargesListener.UseCase
 {
     public class ProcessTenantsChargesUseCase : IProcessTenantsChargesUseCase
     {
-        private readonly ChargesApiGateway _chargesApiGateway;
+        private readonly IChargesApiGateway _chargesApiGateway;
 
-        public ProcessTenantsChargesUseCase(ChargesApiGateway chargesApiGateway)
+        public ProcessTenantsChargesUseCase(IChargesApiGateway chargesApiGateway)
         {
             _chargesApiGateway = chargesApiGateway;
         }
