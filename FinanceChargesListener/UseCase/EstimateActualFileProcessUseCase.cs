@@ -23,8 +23,9 @@ namespace FinanceChargesListener.UseCase
     {
         private readonly IAwsS3FileService _awsS3FileService;
         private readonly HousingSearchService _housingSearchService;
-        private readonly Gateway.Services.Interfaces.IAssetInformationApiGateway _assetInformationApiGateway;
+        private readonly IAssetInformationApiGateway _assetInformationApiGateway;
         private readonly IChargesApiGateway _chargesApiGateway;
+        private readonly IFinancialSummaryService _financialSummaryService;
         private readonly IFinancialSummaryApiGateway _financialSummaryApiGateway;
         private readonly ILogger<EstimateActualFileProcessUseCase> _logger;
 
@@ -33,6 +34,7 @@ namespace FinanceChargesListener.UseCase
             HousingSearchService housingSearchService,
             Gateway.Services.Interfaces.IAssetInformationApiGateway assetInformationApiGateway,
             IChargesApiGateway chargesApiGateway,
+            IFinancialSummaryService financialSummaryService,
             IFinancialSummaryApiGateway financialSummaryApiGateway,
             ILogger<EstimateActualFileProcessUseCase> logger)
         {
@@ -40,6 +42,7 @@ namespace FinanceChargesListener.UseCase
             _housingSearchService = housingSearchService;
             _assetInformationApiGateway = assetInformationApiGateway;
             _chargesApiGateway = chargesApiGateway;
+            _financialSummaryService = financialSummaryService;
             _financialSummaryApiGateway = financialSummaryApiGateway;
             _logger = logger;
         }
