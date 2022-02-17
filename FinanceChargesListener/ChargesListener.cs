@@ -128,10 +128,9 @@ namespace FinanceChargesListener
         private async Task ProcessMessageAsync(SQSEvent.SQSMessage message, ILambdaContext context)
         {
             context.Logger.LogLine($"Processing message {message.MessageId}");
+            context.Logger.LogLine($"Message body {message.Body}");
 
-            var eventJson = JsonSerializer.Serialize(message.Body, JsonOptions);
-
-            var entityEvent = JsonSerializer.Deserialize<EntityEventSns>(eventJson, JsonOptions);
+            var entityEvent = JsonSerializer.Deserialize<EntityEventSns>(message.Body, JsonOptions);
             using (Logger.BeginScope("CorrelationId: {CorrelationId}", entityEvent.CorrelationId))
             {
                 try
@@ -141,7 +140,7 @@ namespace FinanceChargesListener
                     switch (entityEvent.EventType)
                     {
                         case EventTypes.DwellingChargeUpdatedEvent:
-                            entityEvent = JsonSerializer.Deserialize<ChargesEventSns>(eventJson, JsonOptions);
+                            entityEvent = JsonSerializer.Deserialize<ChargesEventSns>(message.Body, JsonOptions);
                             processor = ServiceProvider.GetService<IUpdateChargesUseCase>();
                             break;
 
