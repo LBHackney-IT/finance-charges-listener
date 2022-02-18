@@ -252,7 +252,12 @@ namespace FinanceChargesListener.UseCase
         {
             var maxBatchCount = Constants.PerBatchProcessingCount;
             bool loadResult = false;
-            var loopCount = (charges.Count / maxBatchCount) + 1;
+            var loopCount = 0;
+            if (charges.Count % maxBatchCount == 0)
+                loopCount = charges.Count / maxBatchCount;
+            else
+                loopCount = (charges.Count / maxBatchCount) + 1;
+           
 
             for (var start = 0; start < loopCount; start++)
             {
