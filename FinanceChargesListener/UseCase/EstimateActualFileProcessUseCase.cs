@@ -334,7 +334,7 @@ namespace FinanceChargesListener.UseCase
                         var numericalAssetId = item.Key;
                         if (item.Key.Length < 8)
                         {
-                            numericalAssetId = numericalAssetId.PadLeft(8 , '0');
+                            numericalAssetId = numericalAssetId.PadLeft(8, '0');
                         }
                         var assetDetails = await _assetInformationApiGateway.GetAssetByAssetIdAsync(numericalAssetId).ConfigureAwait(false);
                         if (assetDetails != null)
