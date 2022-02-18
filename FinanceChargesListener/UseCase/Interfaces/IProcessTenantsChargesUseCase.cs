@@ -1,11 +1,9 @@
 using FinanceChargesListener.Boundary;
+using FinanceChargesListener.Domain;
 using Hackney.Shared.Asset.Domain;
-using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using static FinanceChargesListener.Domain.Enums;
 
 namespace FinanceChargesListener.UseCase.Interfaces
 {

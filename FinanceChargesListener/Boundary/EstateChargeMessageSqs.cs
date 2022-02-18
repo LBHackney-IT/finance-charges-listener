@@ -5,8 +5,8 @@ namespace FinanceChargesListener.Boundary
 {
     public class EstateChargeMessageSqs
     {
-        public Enums.ChargeGroup ChargeGroup { get; set; }
-        public Enums.ChargeType ChargeType { get; set; }
+        public ChargeGroup ChargeGroup { get; set; }
+        public ChargeType ChargeType { get; set; }
         public IList<ChargeItemSqs> ChargeItems { get; set; }
     }
 }

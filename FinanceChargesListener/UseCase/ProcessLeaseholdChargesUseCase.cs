@@ -1,23 +1,20 @@
 using FinanceChargesListener.Boundary;
 using FinanceChargesListener.Domain;
-using FinanceChargesListener.Factories;
 using FinanceChargesListener.Gateway.Interfaces;
 using FinanceChargesListener.UseCase.Interfaces;
 using Hackney.Shared.Asset.Domain;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using static FinanceChargesListener.Domain.Enums;
 
 namespace FinanceChargesListener.UseCase
 {
     public class ProcessLeaseholdChargesUseCase : IProcessLeaseholdChargesUseCase
     {
-        private readonly ChargesApiGateway _chargesApiGateway;
+        private readonly IChargesApiGateway _chargesApiGateway;
 
-        public ProcessLeaseholdChargesUseCase(ChargesApiGateway chargesApiGateway)
+        public ProcessLeaseholdChargesUseCase(IChargesApiGateway chargesApiGateway)
         {
             _chargesApiGateway = chargesApiGateway;
         }
@@ -80,7 +77,7 @@ namespace FinanceChargesListener.UseCase
                 else
                 {
                     var chargeToAdd = Utility.Helper.GetChargeModel(asset.Id, asset.AssetType.ToString(), chargeAmount,
-                        entityMessageSqs.ChargeName, entityMessageSqs.ChargeCode, Enums.ChargeGroup.Leaseholders, chargeType);
+                        entityMessageSqs.ChargeName, entityMessageSqs.ChargeCode, ChargeGroup.Leaseholders, chargeType);
 
                     await _chargesApiGateway.AddChargeAsync(chargeToAdd).ConfigureAwait(false);
                 }

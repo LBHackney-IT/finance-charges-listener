@@ -1,7 +1,6 @@
 using Amazon.DynamoDBv2.DataModel;
 using FinanceChargesListener.Domain;
-using FinanceChargesListener.Infrastructure;
-using FinanceChargesListener.Infrastructure.Entity;
+using FinanceChargesListener.Infrastructure.Entities;
 using FinanceChargesListener.Infrastructure.Exceptions;
 using FluentAssertions;
 using System;

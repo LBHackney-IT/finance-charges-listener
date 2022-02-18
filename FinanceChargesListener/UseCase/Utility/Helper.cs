@@ -4,7 +4,6 @@ using Hackney.Shared.Tenure.Domain;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using static FinanceChargesListener.Domain.Enums;
 
 namespace FinanceChargesListener.UseCase.Utility
 {
@@ -147,7 +146,7 @@ namespace FinanceChargesListener.UseCase.Utility
         }
 
         public static Charge GetChargeModel(Guid assetId, string assetType, decimal chargeAmount, string chargeName,
-            string chargeCode, Enums.ChargeGroup chargeGroup, ChargeType chargeType)
+            string chargeCode, ChargeGroup chargeGroup, ChargeType chargeType)
         {
             var detailedChargesList = new List<DetailedCharges>
             {
@@ -158,7 +157,7 @@ namespace FinanceChargesListener.UseCase.Utility
                     ChargeCode = chargeCode,
                     Amount = chargeAmount,
                     ChargeType = chargeType,
-                    Frequency = Enums.ChargeFrequency.Monthly.ToString(),
+                    Frequency = ChargeFrequency.Monthly.ToString(),
                     StartDate = DateTime.UtcNow,
                     EndDate = GetFirstMondayForApril(DateTime.UtcNow.AddYears(1).Year).AddDays(-1)
                 }
@@ -168,7 +167,7 @@ namespace FinanceChargesListener.UseCase.Utility
                 Id = Guid.NewGuid(),
                 TargetId = assetId,
                 ChargeGroup = chargeGroup,
-                TargetType = (Enums.TargetType) Enum.Parse(typeof(Enums.TargetType), assetType),
+                TargetType = (TargetType) Enum.Parse(typeof(TargetType), assetType),
                 DetailedCharges = detailedChargesList.AsEnumerable(),
             };
             return newCharge;
@@ -176,7 +175,7 @@ namespace FinanceChargesListener.UseCase.Utility
         }
 
         public static DetailedCharges GetChargeDetailModel(decimal chargeAmount,
-            string chargeName, string chargeCode, Enums.ChargeGroup chargeGroup, ChargeType chargeType)
+            string chargeName, string chargeCode, ChargeGroup chargeGroup, ChargeType chargeType)
         {
             return new DetailedCharges
             {

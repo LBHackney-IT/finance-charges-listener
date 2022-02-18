@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace FinanceChargesListener.Gateway.Services.Interfaces
 {
-    public interface AssetInformationApiGateway
+    public interface IAssetInformationApiGateway
     {
         Task<Asset> GetAssetByIdAsync(Guid assetId);
 

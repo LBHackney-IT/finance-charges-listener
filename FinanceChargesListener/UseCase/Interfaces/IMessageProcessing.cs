@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace FinanceChargesListener.UseCase.Interfaces
 {
-    public interface MessageProcessing
+    public interface IMessageProcessing
     {
         Task ProcessMessageAsync(EntityEventSns message, JsonSerializerOptions jsonSerializerOptions);
     }

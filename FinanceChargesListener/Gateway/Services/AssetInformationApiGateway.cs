@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace FinanceChargesListener.Gateway.Services
 {
-    public class AssetInformationApiGateway : Interfaces.AssetInformationApiGateway
+    public class AssetInformationApiGateway : Interfaces.IAssetInformationApiGateway
     {
         private readonly HttpClient _client;
 

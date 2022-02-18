@@ -23,6 +23,7 @@ functions:
       ### Re-use the same parameter as used by web api applications
       ENVIRONMENT:  ${ssm:/housing-tl/${self:provider.stage}/aspnetcore-environment}
       FINANCIAL_SUMMARY_API_URL: ${ssm:/housing-finance/${self:provider.stage}/financial-summary-api-url}
+      FINANCIAL_SUMMARY_API_TOKEN: ${ssm:/housing-finance/${self:provider.stage}/financial-summary-api-token}
       HOUSING_SEARCH_API_URL: ${ssm:/housing-finance/${self:provider.stage}/housing-search-api-url}
       HOUSING_SEARCH_API_TOKEN: ${ssm:/housing-finance/${self:provider.stage}/housing-search-api-token}
       ASSET_INFORMATION_API_URL: ${ssm:/housing-finance/${self:provider.stage}/asset-information-api-short-url}
@@ -101,6 +102,7 @@ resources:
                     - s3:GetObjectTagging
                     - s3:GetObjectVersionTagging
                     - s3:PutObjectTagging
+                    - s3:PutObjectTaggingAsync
                     - s3:PutObjectVersionTagging
                   Resource:
                     - "arn:aws:s3:::${self:custom.s3.${opt:stage}}"
