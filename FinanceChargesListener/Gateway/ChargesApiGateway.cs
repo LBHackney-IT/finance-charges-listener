@@ -3,7 +3,6 @@ using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.Model;
 using FinanceChargesListener.Domain;
 using FinanceChargesListener.Factories;
-using FinanceChargesListener.Gateway.Interfaces;
 using FinanceChargesListener.Infrastructure;
 using Microsoft.Extensions.Logging;
 using System;
