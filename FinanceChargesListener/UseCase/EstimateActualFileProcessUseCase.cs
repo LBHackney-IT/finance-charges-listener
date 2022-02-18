@@ -15,6 +15,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace FinanceChargesListener.UseCase
@@ -252,12 +253,12 @@ namespace FinanceChargesListener.UseCase
             var maxBatchCount = Constants.PerBatchProcessingCount;
             bool loadResult = false;
             var loopCount = (charges.Count / maxBatchCount) + 1;
-            var processedCount = 0;
+
             for (var start = 0; start < loopCount; start++)
             {
                 var itemsToWrite = charges.Skip(start * maxBatchCount).Take(maxBatchCount);
-                processedCount += itemsToWrite.Count();
                 loadResult = await _chargesApiGateway.AddTransactionBatchAsync(itemsToWrite.ToList()).ConfigureAwait(false);
+                Thread.Sleep(1000);
             }
             return loadResult;
         }

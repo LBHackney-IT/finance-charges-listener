@@ -17,7 +17,7 @@ namespace FinanceChargesListener
         public const string FailedProcessingTagValue = "Processed";
         public const int PageSize = 8000;
         public const int Page = 1;
-        public const int PerBatchProcessingCount = 25;
+        public const int PerBatchProcessingCount = 10;
         public const string UtcDateFormat = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fff'Z'";
         public const string ChargesListenerUserName = "ChargesListener";
         public const string ServiceChargeType = "Service";
