@@ -1,11 +1,7 @@
 using FinanceChargesListener.Domain;
 using FinanceChargesListener.Gateway.Extensions;
-using FinanceChargesListener.Gateway.Services.Interfaces;
-using Hackney.Shared.Asset.Domain;
 using System;
-using System.Collections.Generic;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace FinanceChargesListener.Gateway.Services

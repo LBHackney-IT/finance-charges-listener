@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace FinanceChargesListener.Gateway.Services
@@ -79,26 +79,44 @@ namespace FinanceChargesListener.Gateway.Services
         public async Task<bool> UpdateFileTag(string bucketName, string key, string tagValue)
         {
             Tagging newTagSet = new Tagging();
+            var request = new GetObjectTaggingRequest
+            {
+                BucketName = bucketName,
+                Key = key
+            };
+            var taggingResponse = await _s3Client.GetObjectTaggingAsync(request).ConfigureAwait(false);
+
             newTagSet.TagSet = new List<Tag>{
-                        new Tag { Key = Constants.TagKey, Value = tagValue}
-                    };
-            PutObjectTaggingRequest putObjTagsRequest = new PutObjectTaggingRequest()
+                new Tag { Key = Constants.TagKey, Value = tagValue}
+            };
+
+            foreach (var tag in taggingResponse.Tagging)
+            {
+                if (newTagSet.TagSet.All(t => t.Key != tag.Key))
+                {
+                    newTagSet.TagSet.Add(new Tag
+                    {
+                        Key = tag.Key,
+                        Value = tag.Value
+                    });
+                }
+            }
+
+            var putObjTagsRequest = new PutObjectTaggingRequest()
             {
                 BucketName = bucketName,
                 Key = key,
                 Tagging = newTagSet
             };
+
             try
             {
-                var response = await _s3Client.PutObjectTaggingAsync(putObjTagsRequest);
-                if (response != null && !string.IsNullOrEmpty(response.VersionId))
-                    return true;
-                else
-                    return false;
+                var response = await _s3Client.PutObjectTaggingAsync(putObjTagsRequest).ConfigureAwait(false);
+                return response.HttpStatusCode == System.Net.HttpStatusCode.OK ? true : false;
             }
             catch (Exception ex)
             {
-                throw new Exception("Failed to update the file tag in S3", ex.InnerException);
+                throw new Exception($"Failed to update the file tag in S3 {ex.Message}", ex.InnerException);
             }
 
         }

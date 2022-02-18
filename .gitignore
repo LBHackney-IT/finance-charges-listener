@@ -64,3 +64,6 @@ tmp/
 .ionide
 
 testresults/
+FinanceChargesListener/.lambda-test-tool/*
+*appsettings.Development.json
+*launchSettings.Development.json

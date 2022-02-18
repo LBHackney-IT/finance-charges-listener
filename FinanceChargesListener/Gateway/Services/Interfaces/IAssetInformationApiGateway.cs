@@ -7,6 +7,7 @@ namespace FinanceChargesListener.Gateway.Services.Interfaces
     public interface IAssetInformationApiGateway
     {
         Task<Asset> GetAssetByIdAsync(Guid assetId);
+
         Task<Asset> GetAssetByAssetIdAsync(string assetId);
     }
 }
