@@ -237,8 +237,8 @@ namespace FinanceChargesListener.UseCase
                     }
                     catch (Exception ex)
                     {
-                        var length = ex.Message.Length > 254 ? 254 : (ex.Message.Length - 1);
-                        await _awsS3FileService.UpdateFileTag(bucketName, fileData.RelativePath, ex.Message.Substring(0, length)).ConfigureAwait(false);
+                        //var length = ex.Message.Length > 254 ? 254 : (ex.Message.Length - 1);
+                        //await _awsS3FileService.UpdateFileTag(bucketName, fileData.RelativePath, ex.Message.Substring(0, length)).ConfigureAwait(false);
                         throw new Exception($"Failed to process the file {ex.Message}", ex.InnerException);
                     }
 
