@@ -236,7 +236,7 @@ namespace FinanceChargesListener.UseCase
                     }
                     catch (Exception ex)
                     {
-                        await _awsS3FileService.UpdateFileTag(bucketName, fileData.RelativePath, ex.Message.Substring(0,254)).ConfigureAwait(false);
+                        await _awsS3FileService.UpdateFileTag(bucketName, fileData.RelativePath, ex.Message.Substring(0, 254)).ConfigureAwait(false);
                         throw new Exception($"Failed to process the file {ex.Message}", ex.InnerException);
                     }
 
