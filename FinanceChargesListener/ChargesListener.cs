@@ -101,11 +101,11 @@ namespace FinanceChargesListener
             .AddHttpMessageHandler<LoggingDelegatingHandler>();
 
             var financialSummaryApiUrl = Environment.GetEnvironmentVariable("FINANCIAL_SUMMARY_API_URL");
-
+            var financialSummaryApiToken = Environment.GetEnvironmentVariable("FINANCIAL_SUMMARY_API_TOKEN");
             services.AddHttpClient<IFinancialSummaryService, FinancialSummaryService>(c =>
             {
                 c.BaseAddress = new Uri(financialSummaryApiUrl);
-                c.Timeout = TimeSpan.FromSeconds(30);
+                c.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(financialSummaryApiToken);
             })
             .AddHttpMessageHandler<LoggingDelegatingHandler>();
 
