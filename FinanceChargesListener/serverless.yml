@@ -102,6 +102,7 @@ resources:
                     - s3:GetObjectTagging
                     - s3:GetObjectVersionTagging
                     - s3:PutObjectTagging
+                    - s3:PutObjectTaggingAsync
                     - s3:PutObjectVersionTagging
                   Resource:
                     - "arn:aws:s3:::${self:custom.s3.${opt:stage}}"
