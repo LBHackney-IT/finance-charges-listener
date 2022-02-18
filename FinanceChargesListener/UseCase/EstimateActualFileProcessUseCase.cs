@@ -257,7 +257,7 @@ namespace FinanceChargesListener.UseCase
                 loopCount = charges.Count / maxBatchCount;
             else
                 loopCount = (charges.Count / maxBatchCount) + 1;
-           
+
 
             for (var start = 0; start < loopCount; start++)
             {
