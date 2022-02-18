@@ -331,7 +331,12 @@ namespace FinanceChargesListener.UseCase
                     else
                     {
                         // Asset Info API Call
-                        var assetDetails = await _assetInformationApiGateway.GetAssetByAssetIdAsync(item.Key).ConfigureAwait(false);
+                        var numericalAssetId = item.Key;
+                        if (item.Key.Length < 8)
+                        {
+                            numericalAssetId = numericalAssetId.PadLeft(8 , '0');
+                        }
+                        var assetDetails = await _assetInformationApiGateway.GetAssetByAssetIdAsync(numericalAssetId).ConfigureAwait(false);
                         if (assetDetails != null)
                             id = assetDetails.Id;
                     }
