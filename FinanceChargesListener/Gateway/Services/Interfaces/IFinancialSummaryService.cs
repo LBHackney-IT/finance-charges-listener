@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using FinanceChargesListener.Domain;
 using System.Threading.Tasks;
 
