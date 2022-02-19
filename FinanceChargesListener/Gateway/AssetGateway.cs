@@ -37,7 +37,7 @@ namespace FinanceChargesListener.Gateway
         {
             try
             {
-                ScanRequest request = new ScanRequest("TenureInformation")
+                ScanRequest request = new ScanRequest("Assets")
                 {
                     Limit = count,
                     ExclusiveStartKey = lastEvaluatedKey
