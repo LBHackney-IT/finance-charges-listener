@@ -47,5 +47,18 @@ namespace FinanceChargesListener.Infrastructure
 
             return chargesList;
         }
+
+        public static IEnumerable<Asset> ToAssets(this ScanResponse response)
+        {
+            foreach (Dictionary<string, AttributeValue> item in response.Items)
+            {
+                yield return new Asset
+                {
+                    Id = Guid.Parse(item["id"].S),
+                    AssetId = item.ContainsKey("assetId") ? (item["assetId"].NULL ? null : item["assetId"].S) : null,
+                    AssetType = Enum.Parse<AssetType>(item["assetType"].S),
+                };
+            }
+        }
     }
 }

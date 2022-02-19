@@ -27,6 +27,9 @@ using HousingSearchService = FinanceChargesListener.Gateway.Services.Interfaces.
 using FinanceChargesListener.Gateway.Services;
 using FinanceChargesListener.Gateway.Interfaces;
 using FinanceChargesListener.Gateway.Services.Interfaces;
+using Amazon.SimpleNotificationService;
+using Hackney.Core.DynamoDb;
+using Amazon.DynamoDBv2;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
@@ -58,9 +61,11 @@ namespace FinanceChargesListener
             services.AddScoped<IChargesApiGateway, Gateway.ChargesApiGateway>();
             services.AddScoped<ChargesMaintenanceApiGateway, Gateway.ChargesMaintenanceApiGateway>();
 
+            services.ConfigureDynamoDB();
+            services.TryAddAWSService<IAmazonDynamoDB>();
             services.ConfigureAws();
             services.AddDefaultAWSOptions(Configuration.GetAWSOptions());
-
+            services.AddAWSService<IAmazonSimpleNotificationService>();
             services.AddScoped<ApplyHeadOfChargeUseCase, UseCase.ApplyHeadOfChargeUseCase>();
             services.AddScoped<IEstimateActualFileProcessUseCase, EstimateActualFileProcessUseCase>();
             services.AddScoped<IManagementFeeUseCase, ManagementFeeUseCase>();
@@ -68,6 +73,7 @@ namespace FinanceChargesListener
             services.AddScoped<IProcessTenantsChargesUseCase, ProcessTenantsChargesUseCase>();
             services.AddScoped<IProcessLeaseholdChargesUseCase, ProcessLeaseholdChargesUseCase>();
             services.AddScoped<IUpdateChargesUseCase, UpdateChargesUseCase>();
+            services.AddScoped<ISnsGateway, SnsGateway>();
 
             services.AddAmazonS3(Configuration);
 

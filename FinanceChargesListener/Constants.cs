@@ -9,6 +9,11 @@ namespace FinanceChargesListener
         public const string ChargeTableName = "Charges";
         public const string EstimateTypeFile = "Estimate";
         public const string ActualTypeFile = "Actual";
+        public const string V1VERSION = "v1";
+        public const string SOURCEDOMAIN = "ChargesListener";
+        public const string SOURCESYSTEM = "ChargesUpdateAPI";
+        public const string NAME = "ChargesUpdateAPI";
+        public const string EMAIL = "chargesupdateapi@hackney.gov.uk";
         public const string AttributeNotExistId = "attribute_not_exists(id)";
         public const string HackneyRootAssetId = "656feda1-896f-b136-da84-163ee4f1be6c";
         public const string RootAsset = "Hackney Homes Limited";
