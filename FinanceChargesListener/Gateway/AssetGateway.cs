@@ -17,11 +17,12 @@ namespace FinanceChargesListener.Gateway
     public class AssetGateway : Interfaces.AssetGateway
     {
         private readonly IDynamoDBContext _dynamoDbContext;
-        readonly IAmazonDynamoDB _dynamoDb;
+        private readonly IAmazonDynamoDB _dynamoDb;
         private readonly ILogger<AssetGateway> _logger;
-        public AssetGateway(IDynamoDBContext dynamoDbContext, ILogger<AssetGateway> logger)
+        public AssetGateway(IDynamoDBContext dynamoDbContext, IAmazonDynamoDB dynamoDB, ILogger<AssetGateway> logger)
         {
             _dynamoDbContext = dynamoDbContext;
+            _dynamoDb = dynamoDB;
             _logger = logger;
 
         }

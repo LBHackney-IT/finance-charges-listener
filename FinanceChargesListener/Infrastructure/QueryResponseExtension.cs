@@ -56,7 +56,7 @@ namespace FinanceChargesListener.Infrastructure
                 {
                     Id = Guid.Parse(item["id"].S),
                     AssetId = item.ContainsKey("assetId") ? (item["assetId"].NULL ? null : item["assetId"].S) : null,
-                    AssetType = item.ContainsKey("assetType") ? (item["assetType"].NULL ? null : Enum.Parse<AssetType>(item["assetType"].S) : null,
+                    AssetType = Enum.Parse<AssetType>(item["assetType"].S),
                 };
             }
         }
