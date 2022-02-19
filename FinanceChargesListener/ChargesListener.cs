@@ -27,6 +27,7 @@ using HousingSearchService = FinanceChargesListener.Gateway.Services.Interfaces.
 using FinanceChargesListener.Gateway.Services;
 using FinanceChargesListener.Gateway.Interfaces;
 using FinanceChargesListener.Gateway.Services.Interfaces;
+using Amazon.SimpleNotificationService;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
@@ -60,7 +61,7 @@ namespace FinanceChargesListener
 
             services.ConfigureAws();
             services.AddDefaultAWSOptions(Configuration.GetAWSOptions());
-
+            services.AddAWSService<IAmazonSimpleNotificationService>();
             services.AddScoped<ApplyHeadOfChargeUseCase, UseCase.ApplyHeadOfChargeUseCase>();
             services.AddScoped<IEstimateActualFileProcessUseCase, EstimateActualFileProcessUseCase>();
             services.AddScoped<IManagementFeeUseCase, ManagementFeeUseCase>();
@@ -68,6 +69,7 @@ namespace FinanceChargesListener
             services.AddScoped<IProcessTenantsChargesUseCase, ProcessTenantsChargesUseCase>();
             services.AddScoped<IProcessLeaseholdChargesUseCase, ProcessLeaseholdChargesUseCase>();
             services.AddScoped<IUpdateChargesUseCase, UpdateChargesUseCase>();
+            services.AddScoped<ISnsGateway, SnsGateway>();
 
             services.AddAmazonS3(Configuration);
 

@@ -1,7 +1,9 @@
+using Amazon.DynamoDBv2.Model;
 using Amazon.S3.Model;
 using ExcelDataReader;
 using FinanceChargesListener.Boundary;
 using FinanceChargesListener.Domain;
+using FinanceChargesListener.Factories;
 using FinanceChargesListener.Gateway.Interfaces;
 using FinanceChargesListener.Gateway.Services.Interfaces;
 using FinanceChargesListener.Infrastructure.Interfaces;
@@ -23,8 +25,10 @@ namespace FinanceChargesListener.UseCase
     public class EstimateActualFileProcessUseCase : IEstimateActualFileProcessUseCase
     {
         private readonly IAwsS3FileService _awsS3FileService;
+        private readonly ISnsGateway _snsGateway;
         private readonly HousingSearchService _housingSearchService;
         private readonly IAssetInformationApiGateway _assetInformationApiGateway;
+        private readonly AssetGateway _assetGateway;
         private readonly IChargesApiGateway _chargesApiGateway;
         private readonly IFinancialSummaryService _financialSummaryService;
         private readonly IFinancialSummaryApiGateway _financialSummaryApiGateway;
@@ -32,16 +36,20 @@ namespace FinanceChargesListener.UseCase
 
         public EstimateActualFileProcessUseCase(
             IAwsS3FileService awsS3FileService,
+            ISnsGateway snsGateway,
             HousingSearchService housingSearchService,
-            Gateway.Services.Interfaces.IAssetInformationApiGateway assetInformationApiGateway,
+            IAssetInformationApiGateway assetInformationApiGateway,
+            AssetGateway assetGateway,
             IChargesApiGateway chargesApiGateway,
             IFinancialSummaryService financialSummaryService,
             IFinancialSummaryApiGateway financialSummaryApiGateway,
             ILogger<EstimateActualFileProcessUseCase> logger)
         {
             _awsS3FileService = awsS3FileService;
+            _snsGateway = snsGateway;
             _housingSearchService = housingSearchService;
             _assetInformationApiGateway = assetInformationApiGateway;
+            _assetGateway = assetGateway;
             _chargesApiGateway = chargesApiGateway;
             _financialSummaryService = financialSummaryService;
             _financialSummaryApiGateway = financialSummaryApiGateway;
@@ -54,6 +62,34 @@ namespace FinanceChargesListener.UseCase
             if (message?.EventData?.NewData != null)
             {
                 var fileData = JsonSerializer.Deserialize<EntityFileMessageSqs>(message?.EventData?.NewData?.ToString() ?? string.Empty, jsonSerializerOptions);
+
+                if (fileData.StepNumber == 1)
+                {
+                    var messageToPublish = fileData;
+                    messageToPublish.StepNumber = fileData.StepNumber + 1;
+                    var publishMessage = ChargesSnsFactory.CreateFileUploadMessage(messageToPublish);
+                    await _snsGateway.Publish(publishMessage).ConfigureAwait(false);
+                }
+
+                if (fileData.StepNumber == 2)
+                {
+                    var assetsFullList = new List<Asset>();
+                    bool dataExists = true;
+                    Dictionary<string, AttributeValue> lastEvaluatedKey = null;
+
+                    while (dataExists)
+                    {
+                        var assetsScanList = await _assetGateway.GetAll(960, lastEvaluatedKey).ConfigureAwait(false);
+                        if (assetsScanList != null && assetsScanList.Assets != null && assetsScanList.Assets.Any())
+                        {
+                            assetsFullList.AddRange(assetsScanList.Assets);
+                            lastEvaluatedKey = assetsScanList.LastKey;
+                        }
+                        else
+                            dataExists = false;
+                    }
+                    _logger.LogDebug($"Extracted the Assets Total {assetsFullList.Count}");
+                }
                 var response = await _awsS3FileService.GetFile(bucketName, fileData.RelativePath).ConfigureAwait(false);
 
                 if (response != null)
@@ -190,6 +226,8 @@ namespace FinanceChargesListener.UseCase
 
 
                         // Charges Load
+                        // Index 4 - take first 3000 skip others
+                        // Index 5 - skip 3000 
                         var writeResult = await WriteChargeItems(propertyCharges).ConfigureAwait(false);
                         if (writeResult)
                             writeResult = await WriteChargeItems(blockCharges).ConfigureAwait(false);
@@ -336,6 +374,8 @@ namespace FinanceChargesListener.UseCase
                         {
                             numericalAssetId = numericalAssetId.PadLeft(8, '0');
                         }
+
+                        // SCAN ASSET Table
                         var assetDetails = await _assetInformationApiGateway.GetAssetByAssetIdAsync(numericalAssetId).ConfigureAwait(false);
                         if (assetDetails != null)
                             id = assetDetails.Id;
