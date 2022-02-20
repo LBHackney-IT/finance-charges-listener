@@ -33,9 +33,9 @@ namespace FinanceChargesListener.UseCase
         private readonly IFinancialSummaryService _financialSummaryService;
         private readonly ILogger<EstimateActualFileProcessUseCase> _logger;
 
-        private static List<AssetKeys> _blockFullList;
-        private static List<AssetKeys> _estateFullList;
-        private static List<Charge> _propertyCharges;
+        private static List<AssetKeys> _blockFullList = new List<AssetKeys>();
+        private static List<AssetKeys> _estateFullList = new List<AssetKeys>();
+        private static List<Charge> _propertyCharges = new List<Charge>();
 
         public EstimateActualFileProcessUseCase(
             IAwsS3FileService awsS3FileService,
@@ -156,7 +156,7 @@ namespace FinanceChargesListener.UseCase
                     var excelData = GetExcelData(s3File);
                     if (excelData != null)
                     {
-                        if (_propertyCharges == null)
+                        if (!_propertyCharges.Any())
                             _logger.LogDebug($"Property Charges is null");
 
                         _logger.LogDebug($"Property Charge Write Starting");
