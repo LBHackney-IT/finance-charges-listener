@@ -222,7 +222,7 @@ namespace FinanceChargesListener.UseCase
                 // Write All Property Charges
                 if (fileData.StepNumber == 2)
                 {
-                    
+
                     if (excelData != null)
                     {
                         if (!_propertyCharges.Any())
@@ -243,7 +243,7 @@ namespace FinanceChargesListener.UseCase
                 // Write Hackney Total Charge
                 if (fileData.StepNumber == 3)
                 {
-                    
+
                     // Estate, Block and Hackney Totals 
                     var blockGroup = excelData.GroupBy(x => x.BlockId).ToList();
                     var estateGroup = excelData.GroupBy(x => x.EstateId).ToList();
@@ -278,7 +278,7 @@ namespace FinanceChargesListener.UseCase
                 // Write Block Summaries List
                 if (fileData.StepNumber == 4)
                 {
-                   
+
                     if (excelData != null)
                     {
                         // Estate, Block and Hackney Totals 
@@ -301,7 +301,7 @@ namespace FinanceChargesListener.UseCase
                 // Update File Tag to Processed
                 if (fileData.StepNumber == 5)
                 {
-                    
+
                     if (excelData != null)
                     {
                         // Estate, Block and Hackney Totals 
