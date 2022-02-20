@@ -233,7 +233,7 @@ namespace FinanceChargesListener.UseCase
                         var data = _propertyCharges.OrderBy(x => x.TargetId).Skip(fileData.WriteIndex * 500).Take(500).ToList();
                         if (data.Any())
                         {
-                            var writeResult = await WriteChargeItems(data).ConfigureAwait(false);
+                            var writeResult = await _chargesApiGateway.SaveBatchAsync(data.ToList()).ConfigureAwait(false);
 
                             _logger.LogDebug($"Property Charge Write Completed");
                             if (writeResult)
@@ -267,9 +267,9 @@ namespace FinanceChargesListener.UseCase
                     _logger.LogDebug($"Hackney Total Charges formation Process completed");
 
                     _logger.LogDebug($"Block, Estate, Hackney Charges Write Starting");
-                    var writeResult = await WriteChargeItems(blockCharges).ConfigureAwait(false);
+                    var writeResult = await _chargesApiGateway.SaveBatchAsync(blockCharges).ConfigureAwait(false); //await WriteChargeItems(blockCharges).ConfigureAwait(false);
                     if (writeResult)
-                        writeResult = await WriteChargeItems(estateCharges).ConfigureAwait(false);
+                        writeResult = await _chargesApiGateway.SaveBatchAsync(estateCharges).ConfigureAwait(false); //await WriteChargeItems(estateCharges).ConfigureAwait(false);
                     if (writeResult)
                         await _chargesApiGateway.AddChargeAsync(hackneyTotalCharge).ConfigureAwait(false);
                     _logger.LogDebug($"Block, Estate, Hackney Charges Write Starting");

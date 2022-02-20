@@ -138,7 +138,12 @@ namespace FinanceChargesListener.Gateway
             var maxBatchCount = PerBatchProcessingCount;
             if (items.Count > maxBatchCount)
             {
-                var loopCount = (items.Count / maxBatchCount) + 1;
+                int loopCount;
+                if (charges.Count % maxBatchCount == 0)
+                    loopCount = charges.Count / maxBatchCount;
+                else
+                    loopCount = (charges.Count / maxBatchCount) + 1;
+
                 for (var start = 0; start < loopCount; start++)
                 {
                     var itemsToWrite = items.Skip(start * maxBatchCount).Take(maxBatchCount);
