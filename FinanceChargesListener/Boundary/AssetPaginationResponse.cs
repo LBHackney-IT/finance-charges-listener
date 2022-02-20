@@ -1,4 +1,5 @@
 using Amazon.DynamoDBv2.Model;
+using FinanceChargesListener.Domain;
 using Hackney.Shared.Asset.Domain;
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,6 @@ namespace FinanceChargesListener.Boundary
 {
     public class AssetPaginationResponse
     {
-        public Dictionary<string, AttributeValue> LastKey { get; set; }
-        public List<Asset> Assets { get; set; }
+        public List<AssetKeys> Assets { get; set; }
     }
 }

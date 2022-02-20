@@ -11,6 +11,6 @@ namespace FinanceChargesListener.Gateway.Interfaces
     public interface AssetGateway
     {
         Task<Asset> GetAssetByIdAsync(Guid assetId);
-        Task<AssetPaginationResponse> GetAll(int count, Dictionary<string, AttributeValue> lastEvaluatedKey = null);
+        Task<AssetPaginationResponse> GetAllByAssetType(string assetType);
     }
 }
