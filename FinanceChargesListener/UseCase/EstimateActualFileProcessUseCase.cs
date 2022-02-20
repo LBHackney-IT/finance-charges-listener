@@ -66,10 +66,45 @@ namespace FinanceChargesListener.UseCase
             {
                 var fileData = JsonSerializer.Deserialize<EntityFileMessageSqs>(message?.EventData?.NewData?.ToString() ?? string.Empty, jsonSerializerOptions);
                 var s3File = await _awsS3FileService.GetFile(bucketName, fileData.RelativePath).ConfigureAwait(false);
-                var fileTypeResponse = GetFileType(s3File);
-                chargeYear = fileTypeResponse.Item1;
-                chargeSubGroup = fileTypeResponse.Item2;
+                var recordsCount = 0;
+               
 
+                Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
+                // Read Excel
+                using (var stream = new MemoryStream())
+                {
+                    s3File.CopyTo(stream);
+                    stream.Position = 1;
+
+                    // Excel Read Process
+                    using var reader = ExcelReaderFactory.CreateReader(stream);
+
+                    while (reader.Read())
+                    {
+                        if (recordsCount != 0 && reader.GetValue(1) != null)
+                        {
+                            try
+                            {
+                                if (recordsCount == 0)
+                                {
+                                    chargeYear = Convert.ToInt16($"20{reader.GetValue(19).ToString().Substring(0, 2)}");
+                                    chargeSubGroup = reader.GetValue(19).ToString().Substring(0, 3).EndsWith("E")
+                                               ? Constants.EstimateTypeFile
+                                               : Constants.ActualTypeFile;
+                                    _logger.LogDebug($"success");
+                                    break;
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                throw new Exception(e.Message);
+                            }
+                        }
+                        recordsCount++;
+                    }
+                }
+                
                 // Extract Blocks List and Estate List by Scanning Assets
                 //if (fileData.StepNumber == 1)
                 //{
