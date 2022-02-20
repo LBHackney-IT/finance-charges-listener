@@ -33,8 +33,8 @@ namespace FinanceChargesListener.UseCase
         private readonly IFinancialSummaryService _financialSummaryService;
         private readonly ILogger<EstimateActualFileProcessUseCase> _logger;
 
-        private static List<AssetKeys> _blockFullList = new List<AssetKeys>();
-        private static List<AssetKeys> _estateFullList = new List<AssetKeys>();
+        private static List<Asset> _blockFullList = new List<Asset>();
+        private static List<Asset> _estateFullList = new List<Asset>();
         private static List<Charge> _propertyCharges = new List<Charge>();
 
         public EstimateActualFileProcessUseCase(
@@ -71,30 +71,30 @@ namespace FinanceChargesListener.UseCase
                 chargeSubGroup = fileTypeResponse.Item2;
 
                 // Extract Blocks List and Estate List by Scanning Assets
-                if (fileData.StepNumber == 1)
-                {
-                    var blocksScanList = await _assetGateway.GetAllByAssetType(AssetType.Block.ToString()).ConfigureAwait(false);
-                    if (blocksScanList != null && blocksScanList.Assets != null && blocksScanList.Assets.Any())
-                    {
-                        _blockFullList.AddRange(blocksScanList.Assets);
-                    }
-                    _logger.LogDebug($"Extracted the Block Assets Total {_blockFullList.Count}");
+                //if (fileData.StepNumber == 1)
+                //{
+                //    var blocksScanList = await _assetGateway.GetAllByAssetType(AssetType.Block.ToString()).ConfigureAwait(false);
+                //    if (blocksScanList != null && blocksScanList.Assets != null && blocksScanList.Assets.Any())
+                //    {
+                //        _blockFullList.AddRange(blocksScanList.Assets);
+                //    }
+                //    _logger.LogDebug($"Extracted the Block Assets Total {_blockFullList.Count}");
 
-                    var estateScanList = await _assetGateway.GetAllByAssetType(AssetType.Estate.ToString()).ConfigureAwait(false);
-                    if (estateScanList != null && estateScanList.Assets != null && estateScanList.Assets.Any())
-                    {
-                        _estateFullList.AddRange(estateScanList.Assets);
-                    }
-                    _logger.LogDebug($"Extracted the Estate Assets Total {_estateFullList.Count}");
+                //    var estateScanList = await _assetGateway.GetAllByAssetType(AssetType.Estate.ToString()).ConfigureAwait(false);
+                //    if (estateScanList != null && estateScanList.Assets != null && estateScanList.Assets.Any())
+                //    {
+                //        _estateFullList.AddRange(estateScanList.Assets);
+                //    }
+                //    _logger.LogDebug($"Extracted the Estate Assets Total {_estateFullList.Count}");
 
-                    await PushMessageToSNS(fileData).ConfigureAwait(false);
-                }
+                //    await PushMessageToSNS(fileData).ConfigureAwait(false);
+                //}
 
                 // Read Excel ,
                 // Get All Dwelling Asset,
                 // Transform Asset Id,
                 // Form Property Charges 
-                if (fileData.StepNumber == 2)
+                if (fileData.StepNumber == 1)
                 {
 
                     if (s3File != null)
@@ -106,11 +106,11 @@ namespace FinanceChargesListener.UseCase
                         var assetsList = await GetAssetsList(AssetType.Dwelling.ToString()).ConfigureAwait(false);
                         var dwellingsListResult = assetsList.Item1;
 
-                        //var blockList = await GetAssetsList(AssetType.Block.ToString()).ConfigureAwait(false);
-                        //var blockListResult = blockList.Item1;
+                        var blockList = await GetAssetsList(AssetType.Block.ToString()).ConfigureAwait(false);
+                        _blockFullList = blockList.Item1;
 
-                        //var estateList = await GetAssetsList(AssetType.Estate.ToString()).ConfigureAwait(false);
-                        //var estateListResult = estateList.Item1;
+                        var estateList = await GetAssetsList(AssetType.Estate.ToString()).ConfigureAwait(false);
+                        _estateFullList = estateList.Item1;
 
                         _logger.LogDebug($"Assets List fetching completed and total assets fetched : {assetsList.Item1.Count}");
 
@@ -151,7 +151,7 @@ namespace FinanceChargesListener.UseCase
                 // Create Estate Charges List
                 // Create Hackney Total Charge
                 // Write All Property Charges
-                if (fileData.StepNumber == 3)
+                if (fileData.StepNumber == 2)
                 {
                     var excelData = GetExcelData(s3File);
                     if (excelData != null)
@@ -172,7 +172,7 @@ namespace FinanceChargesListener.UseCase
                 // Write All Block Charges
                 // Write All Estate Charges
                 // Write Hackney Total Charge
-                if (fileData.StepNumber == 4)
+                if (fileData.StepNumber == 3)
                 {
                     var excelData = GetExcelData(s3File);
                     // Estate, Block and Hackney Totals 
@@ -207,7 +207,7 @@ namespace FinanceChargesListener.UseCase
                 // Group By Block Id
                 // Get Block Summaries list
                 // Write Block Summaries List
-                if (fileData.StepNumber == 5)
+                if (fileData.StepNumber == 4)
                 {
                     var excelData = GetExcelData(s3File);
                     if (excelData != null)
@@ -230,7 +230,7 @@ namespace FinanceChargesListener.UseCase
                 // Write Estate Summaries List
                 // Write Hackney Total Sumamry
                 // Update File Tag to Processed
-                if (fileData.StepNumber == 6)
+                if (fileData.StepNumber == 5)
                 {
                     var excelData = GetExcelData(s3File);
                     if (excelData != null)
@@ -493,7 +493,7 @@ namespace FinanceChargesListener.UseCase
                                 chargeSubGroup = reader.GetValue(19).ToString().Substring(0, 3).EndsWith("E")
                                            ? Constants.EstimateTypeFile
                                            : Constants.ActualTypeFile;
-
+                                break;
                             }
                         }
                         catch (Exception e)
@@ -601,7 +601,7 @@ namespace FinanceChargesListener.UseCase
         }
 
         private List<AddAssetSummaryRequest> GetAssetSummariesByType(List<IGrouping<string, EstimateActualCharge>> assetsGroup,
-          List<AssetKeys> assetListResult, List<EstimateActualCharge> excelData, TargetType targetType, short chargeYear, string type)
+          List<Asset> assetListResult, List<EstimateActualCharge> excelData, TargetType targetType, short chargeYear, string type)
         {
             var summaries = new List<AddAssetSummaryRequest>();
             foreach (var item in assetsGroup)
@@ -646,7 +646,7 @@ namespace FinanceChargesListener.UseCase
         }
 
         private async Task<List<Charge>> GetSummarisedChargesList(List<IGrouping<string, EstimateActualCharge>> assetsGroup,
-           List<AssetKeys> assetListResult, string assetType, ChargeGroup chargeGroup, string chargeSubGroup,
+           List<Asset> assetListResult, string assetType, ChargeGroup chargeGroup, string chargeSubGroup,
            string createdBy, short chargeYear)
         {
             var chargesResultList = new List<Charge>();
