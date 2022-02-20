@@ -211,7 +211,7 @@ namespace FinanceChargesListener.UseCase
                                 ChargeGroup.Leaseholders, chargeSubGroup, createdBy, chargeYear, item));
                         }
                     }
-                    await PushMessageToSNS(fileData).ConfigureAwait(false);
+                    await PushMessageToSNS(fileData, 0).ConfigureAwait(false);
                 }
 
                 // Get Excel Data
@@ -242,7 +242,7 @@ namespace FinanceChargesListener.UseCase
                                 await PushMessageToSNS(fileData, index, false).ConfigureAwait(false);
                         }
                         else
-                            await PushMessageToSNS(fileData).ConfigureAwait(false);
+                            await PushMessageToSNS(fileData, 0).ConfigureAwait(false);
                     }
                 }
 
@@ -277,7 +277,7 @@ namespace FinanceChargesListener.UseCase
                     _logger.LogDebug($"Block, Estate, Hackney Charges Write Starting");
 
                     if (writeResult)
-                        await PushMessageToSNS(fileData).ConfigureAwait(false);
+                        await PushMessageToSNS(fileData, 0).ConfigureAwait(false);
                 }
 
                 // Get Excel Data
@@ -297,7 +297,7 @@ namespace FinanceChargesListener.UseCase
                         var blockSummaryLoadResult = await _financialSummaryService.AddEstimateActualSummaryBatch(blockSummaries.ToList()).ConfigureAwait(false);
 
                         if (blockSummaryLoadResult)
-                            await PushMessageToSNS(fileData).ConfigureAwait(false);
+                            await PushMessageToSNS(fileData, 0).ConfigureAwait(false);
                     }
                 }
 
@@ -649,7 +649,7 @@ namespace FinanceChargesListener.UseCase
         //    }
         //    return estimatesActual;
         //}
-        private async Task PushMessageToSNS(EntityFileMessageSqs fileData, int writeIndex = 0, bool toNextStep = true)
+        private async Task PushMessageToSNS(EntityFileMessageSqs fileData, int writeIndex, bool toNextStep = true)
         {
             var messageToPublish = fileData;
             messageToPublish.StepNumber = toNextStep ? fileData.StepNumber + 1 : fileData.StepNumber;
