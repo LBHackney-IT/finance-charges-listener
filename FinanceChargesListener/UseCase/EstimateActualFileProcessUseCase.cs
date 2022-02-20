@@ -212,6 +212,7 @@ namespace FinanceChargesListener.UseCase
                         }
                     }
                     await PushMessageToSNS(fileData, 0).ConfigureAwait(false);
+                    return;
                 }
 
                 // Get Excel Data
@@ -244,6 +245,7 @@ namespace FinanceChargesListener.UseCase
                         else
                             await PushMessageToSNS(fileData, 0).ConfigureAwait(false);
                     }
+                    return;
                 }
 
                 // Write All Block Charges
@@ -278,6 +280,7 @@ namespace FinanceChargesListener.UseCase
 
                     if (writeResult)
                         await PushMessageToSNS(fileData, 0).ConfigureAwait(false);
+                    return;
                 }
 
                 // Get Excel Data
@@ -299,6 +302,7 @@ namespace FinanceChargesListener.UseCase
                         if (blockSummaryLoadResult)
                             await PushMessageToSNS(fileData, 0).ConfigureAwait(false);
                     }
+                    return;
                 }
 
                 // Get Excel Data
@@ -651,7 +655,8 @@ namespace FinanceChargesListener.UseCase
         //}
         private async Task PushMessageToSNS(EntityFileMessageSqs fileData, int writeIndex, bool toNextStep = true)
         {
-            var messageToPublish = fileData;
+            var messageToPublish = new EntityFileMessageSqs();
+            messageToPublish = fileData;
             messageToPublish.StepNumber = toNextStep ? fileData.StepNumber + 1 : fileData.StepNumber;
             messageToPublish.WriteIndex = writeIndex;
             var publishMessage = ChargesSnsFactory.CreateFileUploadMessage(messageToPublish);
