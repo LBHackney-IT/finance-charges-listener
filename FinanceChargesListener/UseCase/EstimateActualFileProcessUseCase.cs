@@ -230,27 +230,16 @@ namespace FinanceChargesListener.UseCase
 
                         _logger.LogDebug($"Property Charge Write Starting");
                         // Charges Load
-                        var writeResult = await WriteChargeItems(_propertyCharges.OrderBy(x => x.TargetId).Take(4731).ToList()).ConfigureAwait(false);
+                        var data = _propertyCharges.OrderBy(x => x.TargetId).Skip(fileData.WriteIndex * 500).Take(500).ToList();
+                        if (data.Any())
+                        {
+                            var writeResult = await WriteChargeItems(data).ConfigureAwait(false);
 
-                        _logger.LogDebug($"Property Charge Write Completed");
-                        if (writeResult)
-                            await PushMessageToSNS(fileData).ConfigureAwait(false);
-                    }
-                }
-                if (fileData.StepNumber == 3)
-                {
-                    _logger.LogDebug($"Step {fileData.StepNumber}");
-                    if (excelData != null)
-                    {
-                        if (!_propertyCharges.Any())
-                            _logger.LogDebug($"Property Charges is null");
-
-                        _logger.LogDebug($"Property Charge Write Starting");
-                        // Charges Load
-                        var writeResult = await WriteChargeItems(_propertyCharges.OrderBy(x => x.TargetId).Skip(4731).Take(7000).ToList()).ConfigureAwait(false);
-
-                        _logger.LogDebug($"Property Charge Write Completed");
-                        if (writeResult)
+                            _logger.LogDebug($"Property Charge Write Completed");
+                            if (writeResult)
+                                await PushMessageToSNS(fileData, ++fileData.WriteIndex, false).ConfigureAwait(false);
+                        }
+                        else
                             await PushMessageToSNS(fileData).ConfigureAwait(false);
                     }
                 }
@@ -258,7 +247,7 @@ namespace FinanceChargesListener.UseCase
                 // Write All Block Charges
                 // Write All Estate Charges
                 // Write Hackney Total Charge
-                if (fileData.StepNumber == 4)
+                if (fileData.StepNumber == 3)
                 {
                     _logger.LogDebug($"Step {fileData.StepNumber}");
                     // Estate, Block and Hackney Totals 
@@ -293,7 +282,7 @@ namespace FinanceChargesListener.UseCase
                 // Group By Block Id
                 // Get Block Summaries list
                 // Write Block Summaries List
-                if (fileData.StepNumber == 5)
+                if (fileData.StepNumber == 4)
                 {
                     _logger.LogDebug($"Step {fileData.StepNumber}");
                     if (excelData != null)
@@ -316,7 +305,7 @@ namespace FinanceChargesListener.UseCase
                 // Write Estate Summaries List
                 // Write Hackney Total Sumamry
                 // Update File Tag to Processed
-                if (fileData.StepNumber == 6)
+                if (fileData.StepNumber == 5)
                 {
                     _logger.LogDebug($"Step {fileData.StepNumber}");
                     if (excelData != null)
@@ -658,10 +647,11 @@ namespace FinanceChargesListener.UseCase
         //    }
         //    return estimatesActual;
         //}
-        private async Task PushMessageToSNS(EntityFileMessageSqs fileData)
+        private async Task PushMessageToSNS(EntityFileMessageSqs fileData, int writeIndex = 0, bool toNextStep = true)
         {
             var messageToPublish = fileData;
-            messageToPublish.StepNumber = fileData.StepNumber + 1;
+            messageToPublish.StepNumber = toNextStep ? fileData.StepNumber + 1 : fileData.StepNumber;
+            messageToPublish.WriteIndex = writeIndex;
             var publishMessage = ChargesSnsFactory.CreateFileUploadMessage(messageToPublish);
             await _snsGateway.Publish(publishMessage).ConfigureAwait(false);
         }
@@ -681,6 +671,8 @@ namespace FinanceChargesListener.UseCase
             {
                 var itemsToWrite = charges.Skip(start * maxBatchCount).Take(maxBatchCount);
                 loadResult = await _chargesApiGateway.AddTransactionBatchAsync(itemsToWrite.ToList()).ConfigureAwait(false);
+                if (!loadResult)
+                    throw new Exception("Something wrong happend while writing charges");
                 Thread.Sleep(1000);
             }
             return loadResult;
