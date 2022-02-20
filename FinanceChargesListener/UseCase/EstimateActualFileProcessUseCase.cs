@@ -236,9 +236,10 @@ namespace FinanceChargesListener.UseCase
                             var writeResult = await WriteChargeItems(data.ToList()).ConfigureAwait(false);
 
                             _logger.LogDebug($"Property Charge Write Completed");
-                            _logger.LogDebug($"Write Index Value : {fileData.WriteIndex}");
+                            int index = fileData.WriteIndex + 1;
+                            _logger.LogDebug($"Write Index Value : {index}");
                             if (writeResult)
-                                await PushMessageToSNS(fileData, fileData.WriteIndex++, false).ConfigureAwait(false);
+                                await PushMessageToSNS(fileData, index, false).ConfigureAwait(false);
                         }
                         else
                             await PushMessageToSNS(fileData).ConfigureAwait(false);
