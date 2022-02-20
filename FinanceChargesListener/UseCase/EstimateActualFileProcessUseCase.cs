@@ -165,7 +165,7 @@ namespace FinanceChargesListener.UseCase
                 // Form Property Charges 
                 if (fileData.StepNumber == 1)
                 {
-
+                    _logger.LogDebug($"Step {fileData.StepNumber}");
                     if (excelData != null)
                     {
                         var estimatesActual = excelData;
@@ -222,7 +222,7 @@ namespace FinanceChargesListener.UseCase
                 // Write All Property Charges
                 if (fileData.StepNumber == 2)
                 {
-
+                    _logger.LogDebug($"Step {fileData.StepNumber}");
                     if (excelData != null)
                     {
                         if (!_propertyCharges.Any())
@@ -230,7 +230,24 @@ namespace FinanceChargesListener.UseCase
 
                         _logger.LogDebug($"Property Charge Write Starting");
                         // Charges Load
-                        var writeResult = await WriteChargeItems(_propertyCharges).ConfigureAwait(false);
+                        var writeResult = await WriteChargeItems(_propertyCharges.OrderBy(x => x.TargetId).Take(4731).ToList()).ConfigureAwait(false);
+
+                        _logger.LogDebug($"Property Charge Write Completed");
+                        if (writeResult)
+                            await PushMessageToSNS(fileData).ConfigureAwait(false);
+                    }
+                }
+                if (fileData.StepNumber == 3)
+                {
+                    _logger.LogDebug($"Step {fileData.StepNumber}");
+                    if (excelData != null)
+                    {
+                        if (!_propertyCharges.Any())
+                            _logger.LogDebug($"Property Charges is null");
+
+                        _logger.LogDebug($"Property Charge Write Starting");
+                        // Charges Load
+                        var writeResult = await WriteChargeItems(_propertyCharges.OrderBy(x => x.TargetId).Skip(4731).Take(7000).ToList()).ConfigureAwait(false);
 
                         _logger.LogDebug($"Property Charge Write Completed");
                         if (writeResult)
@@ -241,9 +258,9 @@ namespace FinanceChargesListener.UseCase
                 // Write All Block Charges
                 // Write All Estate Charges
                 // Write Hackney Total Charge
-                if (fileData.StepNumber == 3)
+                if (fileData.StepNumber == 4)
                 {
-
+                    _logger.LogDebug($"Step {fileData.StepNumber}");
                     // Estate, Block and Hackney Totals 
                     var blockGroup = excelData.GroupBy(x => x.BlockId).ToList();
                     var estateGroup = excelData.GroupBy(x => x.EstateId).ToList();
@@ -276,9 +293,9 @@ namespace FinanceChargesListener.UseCase
                 // Group By Block Id
                 // Get Block Summaries list
                 // Write Block Summaries List
-                if (fileData.StepNumber == 4)
+                if (fileData.StepNumber == 5)
                 {
-
+                    _logger.LogDebug($"Step {fileData.StepNumber}");
                     if (excelData != null)
                     {
                         // Estate, Block and Hackney Totals 
@@ -299,9 +316,9 @@ namespace FinanceChargesListener.UseCase
                 // Write Estate Summaries List
                 // Write Hackney Total Sumamry
                 // Update File Tag to Processed
-                if (fileData.StepNumber == 5)
+                if (fileData.StepNumber == 6)
                 {
-
+                    _logger.LogDebug($"Step {fileData.StepNumber}");
                     if (excelData != null)
                     {
                         // Estate, Block and Hackney Totals 
