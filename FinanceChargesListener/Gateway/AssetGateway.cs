@@ -33,23 +33,32 @@ namespace FinanceChargesListener.Gateway
             return result?.ToDomain();
         }
 
-        public async Task<AssetPaginationResponse> GetAll(int count, Dictionary<string, AttributeValue> lastEvaluatedKey = null)
+        public async Task<AssetPaginationResponse> GetAllByAssetType(string assetType)
         {
             try
             {
-                ScanRequest request = new ScanRequest("Assets")
+                //ScanRequest request = new ScanRequest("Assets")
+                //{
+                //    Limit = count,
+                //    ExclusiveStartKey = lastEvaluatedKey
+                //};
+                //ScanResponse response = await _dynamoDb.ScanAsync(request).ConfigureAwait(false);
+                //if (response == null || response.Items == null)
+                //    throw new Exception($"_dynamoDb.ScanAsync results NULL: {response?.ToString()}");
+                var scanRequest = new ScanRequest
                 {
-                    Limit = count,
-                    ExclusiveStartKey = lastEvaluatedKey
+                    TableName = "Assets",
+                    FilterExpression = "assetType = :assetType",
+                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+                    {
+                        { ":assetType", new AttributeValue { S = assetType.ToString() } }
+                    }
                 };
-                ScanResponse response = await _dynamoDb.ScanAsync(request).ConfigureAwait(false);
-                if (response == null || response.Items == null)
-                    throw new Exception($"_dynamoDb.ScanAsync results NULL: {response?.ToString()}");
-
+                var response = await _dynamoDb.ScanAsync(scanRequest).ConfigureAwait(false);
+                var responseAssets = response.Items.Select(x => x.GetChargeKeys());
                 return new AssetPaginationResponse()
                 {
-                    LastKey = response?.LastEvaluatedKey,
-                    Assets = response?.ToAssets()?.ToList()
+                    Assets = responseAssets?.ToList()
                 };
             }
             catch (Exception ex)

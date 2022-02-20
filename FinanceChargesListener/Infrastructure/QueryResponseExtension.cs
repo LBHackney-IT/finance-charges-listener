@@ -60,5 +60,7 @@ namespace FinanceChargesListener.Infrastructure
                 };
             }
         }
+        public static AssetKeys GetChargeKeys(this Dictionary<string, AttributeValue> scanResponseItem)
+           => new AssetKeys(Guid.Parse(scanResponseItem["id"].S), scanResponseItem["assetId"].S);
     }
 }
