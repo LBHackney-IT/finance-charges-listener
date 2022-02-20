@@ -6,5 +6,6 @@ namespace FinanceChargesListener.Boundary
         public string BucketName { get; set; }
         public string FileUrl { get; set; }
         public int StepNumber { get; set; }
+        public int WriteIndex { get; set; }
     }
 }
