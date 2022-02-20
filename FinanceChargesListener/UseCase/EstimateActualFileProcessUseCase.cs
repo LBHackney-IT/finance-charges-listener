@@ -96,7 +96,7 @@ namespace FinanceChargesListener.UseCase
                 // Form Property Charges 
                 if (fileData.StepNumber == 2)
                 {
-                   
+
                     if (s3File != null)
                     {
                         var estimatesActual = GetExcelData(s3File);
@@ -156,7 +156,7 @@ namespace FinanceChargesListener.UseCase
                     var excelData = GetExcelData(s3File);
                     if (excelData != null)
                     {
-                        if(_propertyCharges == null)
+                        if (_propertyCharges == null)
                             _logger.LogDebug($"Property Charges is null");
 
                         _logger.LogDebug($"Property Charge Write Starting");
@@ -179,21 +179,21 @@ namespace FinanceChargesListener.UseCase
                     var blockGroup = excelData.GroupBy(x => x.BlockId).ToList();
                     var estateGroup = excelData.GroupBy(x => x.EstateId).ToList();
 
-                     var blockCharges = await GetSummarisedChargesList(blockGroup, _blockFullList, AssetType.Block.ToString(),
-                        ChargeGroup.Leaseholders, chargeSubGroup, Constants.ChargesListenerUserName, chargeYear);
+                    var blockCharges = await GetSummarisedChargesList(blockGroup, _blockFullList, AssetType.Block.ToString(),
+                       ChargeGroup.Leaseholders, chargeSubGroup, Constants.ChargesListenerUserName, chargeYear);
                     _logger.LogDebug($"Block Charges formation Process completed with total record count as : {blockCharges.Count()}");
 
-                     var estateCharges = await GetSummarisedChargesList(estateGroup, _estateFullList, AssetType.Estate.ToString(),
-                        ChargeGroup.Leaseholders, chargeSubGroup, Constants.ChargesListenerUserName, chargeYear);
+                    var estateCharges = await GetSummarisedChargesList(estateGroup, _estateFullList, AssetType.Estate.ToString(),
+                       ChargeGroup.Leaseholders, chargeSubGroup, Constants.ChargesListenerUserName, chargeYear);
                     _logger.LogDebug($"Estate Charges formation Process completed with total record count as : {estateCharges.Count()}");
 
-                     var hackneyTotalCharge = GetHackneyTotal(excelData, AssetType.NA.ToString(),
-                        ChargeGroup.Leaseholders, chargeSubGroup, Constants.ChargesListenerUserName, chargeYear);
+                    var hackneyTotalCharge = GetHackneyTotal(excelData, AssetType.NA.ToString(),
+                       ChargeGroup.Leaseholders, chargeSubGroup, Constants.ChargesListenerUserName, chargeYear);
                     _logger.LogDebug($"Hackney Total Charges formation Process completed");
 
                     _logger.LogDebug($"Block, Estate, Hackney Charges Write Starting");
                     var writeResult = await WriteChargeItems(blockCharges).ConfigureAwait(false);
-                    if(writeResult)
+                    if (writeResult)
                         writeResult = await WriteChargeItems(estateCharges).ConfigureAwait(false);
                     if (writeResult)
                         await _chargesApiGateway.AddChargeAsync(hackneyTotalCharge).ConfigureAwait(false);
@@ -219,7 +219,7 @@ namespace FinanceChargesListener.UseCase
                         var blockSummaries = GetAssetSummariesByType(blockGroup, _blockFullList, excelData, TargetType.Block, chargeYear, chargeSubGroup);
                         var blockSummaryLoadResult = await _financialSummaryService.AddEstimateActualSummaryBatch(blockSummaries.ToList()).ConfigureAwait(false);
 
-                        if(blockSummaryLoadResult)
+                        if (blockSummaryLoadResult)
                             await PushMessageToSNS(fileData).ConfigureAwait(false);
                     }
                 }
@@ -232,7 +232,7 @@ namespace FinanceChargesListener.UseCase
                 // Update File Tag to Processed
                 if (fileData.StepNumber == 6)
                 {
-                    var excelData =  GetExcelData(s3File);
+                    var excelData = GetExcelData(s3File);
                     if (excelData != null)
                     {
                         // Estate, Block and Hackney Totals 
@@ -268,7 +268,7 @@ namespace FinanceChargesListener.UseCase
                         var updateTagResponse = await _awsS3FileService.UpdateFileTag(bucketName, fileData.RelativePath, Constants.SuccessfulProcessingTagValue).ConfigureAwait(false);
                         if (updateTagResponse)
                             _logger.LogDebug($"Estimate or Actual file processed successfully");
-                       
+
                     }
                 }
                 //var response = await _awsS3FileService.GetFile(bucketName, fileData.RelativePath).ConfigureAwait(false);
@@ -278,7 +278,7 @@ namespace FinanceChargesListener.UseCase
                 //    try
                 //    {
                 //        var recordsCount = 0;
-                       
+
                 //        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
                 //        var estimatesActual = new List<EstimateActualCharge>();
@@ -508,7 +508,7 @@ namespace FinanceChargesListener.UseCase
         }
         private static List<EstimateActualCharge> GetExcelData(Stream s3FileData)
         {
-            
+
             var recordsCount = 0;
 
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -572,7 +572,7 @@ namespace FinanceChargesListener.UseCase
             }
             return estimatesActual;
         }
-        private  async Task PushMessageToSNS(EntityFileMessageSqs fileData)
+        private async Task PushMessageToSNS(EntityFileMessageSqs fileData)
         {
             var messageToPublish = fileData;
             messageToPublish.StepNumber = fileData.StepNumber + 1;
