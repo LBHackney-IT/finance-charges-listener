@@ -78,7 +78,7 @@ namespace FinanceChargesListener.UseCase
                                Enum.Parse<ChargeSubGroup>(chargeSubGroup)).ConfigureAwait(false);
                     _logger.LogDebug($"Charge Delete Count {_chargeKeysToDelete.Count}");
                 }
-                    
+
 
                 Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
@@ -211,7 +211,7 @@ namespace FinanceChargesListener.UseCase
                     _logger.LogDebug($"Step {fileData.StepNumber}");
                     if (excelData != null)
                     {
-                       
+
                         if (chergeExists || fileData.WriteIndex > 0)
                         {
                             _logger.LogDebug($"Property Charge Exists for {chargeYear} {chargeSubGroup}");
@@ -231,18 +231,18 @@ namespace FinanceChargesListener.UseCase
                             else
                                 await PushMessageToSNS(fileData, 0).ConfigureAwait(false);
                             _logger.LogDebug($"Charge Delete Completed");
-                           
+
                         }
                         return;
                     }
-                       
+
                 }
-                    // Get Excel Data
-                    // Group by Block Id and Estate Id
-                    // Create Block Charges List
-                    // Create Estate Charges List
-                    // Create Hackney Total Charge
-                    // Write All Property Charges
+                // Get Excel Data
+                // Group by Block Id and Estate Id
+                // Create Block Charges List
+                // Create Estate Charges List
+                // Create Hackney Total Charge
+                // Write All Property Charges
                 if (fileData.StepNumber == 3)
                 {
                     _logger.LogDebug($"Step {fileData.StepNumber}");
@@ -278,12 +278,12 @@ namespace FinanceChargesListener.UseCase
                     _logger.LogDebug($"Step {fileData.StepNumber}");
                     // Estate, Block and Hackney Totals 
                     var blockGroup = excelData.GroupBy(x => x.BlockId).ToList();
-                    
+
                     var blockCharges = await GetSummarisedChargesList(blockGroup, _blockFullList, AssetType.Block.ToString(),
                        ChargeGroup.Leaseholders, chargeSubGroup, Constants.ChargesListenerUserName, chargeYear);
                     _logger.LogDebug($"Block Charges formation Process completed with total record count as : {blockCharges.Count()}");
 
-                   var data = blockCharges.OrderBy(x => x.TargetId).Skip(fileData.WriteIndex * 500).Take(500).ToList();
+                    var data = blockCharges.OrderBy(x => x.TargetId).Skip(fileData.WriteIndex * 500).Take(500).ToList();
                     _logger.LogDebug($"Block Charges Write Starting");
 
                     if (data != null && data.Any())
@@ -303,8 +303,8 @@ namespace FinanceChargesListener.UseCase
                         _logger.LogDebug($"Block Charges FULL Write Complete");
                         await PushMessageToSNS(fileData, 0).ConfigureAwait(false);
                     }
-                        
-                  
+
+
                     return;
                 }
 
@@ -312,7 +312,7 @@ namespace FinanceChargesListener.UseCase
                 {
                     _logger.LogDebug($"Step {fileData.StepNumber}");
                     // Estate, Block and Hackney Totals 
-                   
+
                     var estateGroup = excelData.GroupBy(x => x.EstateId).ToList();
 
                     var estateCharges = await GetSummarisedChargesList(estateGroup, _estateFullList, AssetType.Estate.ToString(),
@@ -324,9 +324,9 @@ namespace FinanceChargesListener.UseCase
                     _logger.LogDebug($"Hackney Total Charges formation Process completed");
 
                     _logger.LogDebug($"Estate, Hackney Charges Write Starting");
-                  
-                  
-                      var  writeResult = await WriteChargeItems(estateCharges).ConfigureAwait(false); //await WriteChargeItems(estateCharges).ConfigureAwait(false);
+
+
+                    var writeResult = await WriteChargeItems(estateCharges).ConfigureAwait(false); //await WriteChargeItems(estateCharges).ConfigureAwait(false);
                     if (writeResult)
                         await _chargesApiGateway.AddChargeAsync(hackneyTotalCharge).ConfigureAwait(false);
                     _logger.LogDebug($"Block, Estate, Hackney Charges Write Starting");
@@ -367,7 +367,7 @@ namespace FinanceChargesListener.UseCase
                             _logger.LogDebug($"Block Summaries FULL Write Complete");
                             await PushMessageToSNS(fileData, 0).ConfigureAwait(false);
                         }
-                        
+
                     }
                     return;
                 }
