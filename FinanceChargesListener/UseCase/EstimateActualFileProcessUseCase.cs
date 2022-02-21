@@ -70,14 +70,7 @@ namespace FinanceChargesListener.UseCase
                 var fileData = JsonSerializer.Deserialize<EntityFileMessageSqs>(message?.EventData?.NewData?.ToString() ?? string.Empty, jsonSerializerOptions);
                 var s3file = await _awsS3FileService.GetFile(bucketName, fileData.RelativePath).ConfigureAwait(false);
                 var recordsCount = 0;
-                var chargeData = await _chargesApiGateway.GetChargeByTargetIdAsync(checkCharge).ConfigureAwait(false);
-                if (chargeData != null && chargeData.Any())
-                {
-                    chergeExists = true;
-                    _chargeKeysToDelete = await _chargesApiGateway.ScanByYearGroupSubGroup(chargeYear, ChargeGroup.Leaseholders,
-                               Enum.Parse<ChargeSubGroup>(chargeSubGroup)).ConfigureAwait(false);
-                    _logger.LogDebug($"Charge Delete Count {_chargeKeysToDelete.Count}");
-                }
+
 
 
                 Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -149,7 +142,14 @@ namespace FinanceChargesListener.UseCase
                         recordsCount++;
                     }
                 }
-
+                var chargeData = await _chargesApiGateway.GetChargeByTargetIdAsync(excelData.First().AssetId).ConfigureAwait(false);
+                if (chargeData != null && chargeData.Any())
+                {
+                    chergeExists = true;
+                    _chargeKeysToDelete = await _chargesApiGateway.ScanByYearGroupSubGroup(chargeYear, ChargeGroup.Leaseholders,
+                               Enum.Parse<ChargeSubGroup>(chargeSubGroup)).ConfigureAwait(false);
+                    _logger.LogDebug($"Charge Delete Count {_chargeKeysToDelete.Count}");
+                }
                 // Read Excel ,
                 // Get All Dwelling Asset,
                 // Transform Asset Id,
