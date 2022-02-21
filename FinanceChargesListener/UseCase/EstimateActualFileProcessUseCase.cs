@@ -203,7 +203,7 @@ namespace FinanceChargesListener.UseCase
                                 ChargeGroup.Leaseholders, chargeSubGroup, createdBy, chargeYear, item));
                         }
                     }
-                    await PushMessageToSNS(fileData, 6).ConfigureAwait(false);
+                    await PushMessageToSNS(fileData, 0).ConfigureAwait(false);
                     return;
                 }
 
@@ -389,6 +389,10 @@ namespace FinanceChargesListener.UseCase
                         // Financial Summary Load
                         // Estate Summary Load
                         _logger.LogDebug($"Estate full list count {_estateFullList.Count}");
+
+                        var estateList = await GetAssetsList(AssetType.Estate.ToString()).ConfigureAwait(false);
+                        _estateFullList = estateList.Item1;
+
                         var estateSumaries = GetAssetSummariesByType(estateGroup, _estateFullList, excelData, TargetType.Estate, chargeYear, chargeSubGroup);
 
                         var data = estateSumaries.OrderBy(x => x.TargetId).Skip(fileData.WriteIndex * 100).Take(100).ToList();
