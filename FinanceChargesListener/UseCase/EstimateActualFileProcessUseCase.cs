@@ -203,7 +203,7 @@ namespace FinanceChargesListener.UseCase
                                 ChargeGroup.Leaseholders, chargeSubGroup, createdBy, chargeYear, item));
                         }
                     }
-                    await PushMessageToSNS(fileData, 0).ConfigureAwait(false);
+                    await PushMessageToSNS(fileData, 6).ConfigureAwait(false);
                     return;
                 }
 
