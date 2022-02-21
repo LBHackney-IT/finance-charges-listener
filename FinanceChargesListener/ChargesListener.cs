@@ -112,6 +112,7 @@ namespace FinanceChargesListener
             {
                 c.BaseAddress = new Uri(financialSummaryApiUrl);
                 c.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(financialSummaryApiToken);
+                c.Timeout = TimeSpan.FromMinutes(5);
             })
             .AddHttpMessageHandler<LoggingDelegatingHandler>();
 
