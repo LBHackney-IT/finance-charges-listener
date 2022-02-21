@@ -792,7 +792,7 @@ namespace FinanceChargesListener.UseCase
                     }
                     var assetName = targetType == TargetType.Block
                         ? excelData.FirstOrDefault(x => x.BlockId == item.Key)?.BlockAddress
-                        : excelData.FirstOrDefault(x => x.BlockId == item.Key)?.EstateAddress;
+                        : excelData.FirstOrDefault(x => x.EstateId == item.Key)?.EstateAddress;
                     var addSummary = new AddAssetSummaryRequest
                     {
                         TargetId = id,
