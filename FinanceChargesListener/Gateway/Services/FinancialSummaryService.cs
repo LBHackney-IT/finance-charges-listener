@@ -24,12 +24,6 @@ namespace FinanceChargesListener.Gateway.Services
 
         public async Task<bool> AddEstimateSummary(AddAssetSummaryRequest addAssetSummaryRequest)
         {
-            //var apiToken = _contextAccessor.HttpContext?.Request?.Headers["Authorization"];
-            //if (string.IsNullOrEmpty(apiToken))
-            //    throw new InvalidCredentialException("Api token shouldn't be null or empty.");
-
-            //_client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(apiToken.ToString().Replace("Bearer ", "").Trim());
-
             var response = await _client.PostAsJsonAsyncType(new Uri("api/v1/asset-summary", UriKind.Relative), addAssetSummaryRequest)
                 .ConfigureAwait(true);
             if (response)
@@ -40,12 +34,6 @@ namespace FinanceChargesListener.Gateway.Services
 
         public async Task<bool> AddEstimateActualSummaryBatch(IEnumerable<AddAssetSummaryRequest> addAssetSummariesRequest)
         {
-            //var apiToken = _contextAccessor.HttpContext?.Request?.Headers["Authorization"];
-            //if (string.IsNullOrEmpty(apiToken))
-            //    throw new InvalidCredentialException("Api token shouldn't be null or empty.");
-
-            //_client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(apiToken.ToString().Replace("Bearer ", "").Trim());
-
             var response = await _client.PostAsJsonAsyncType(new Uri("api/v1/asset-summary/process-batch", UriKind.Relative), addAssetSummariesRequest)
                 .ConfigureAwait(true);
             if (response)

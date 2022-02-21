@@ -92,7 +92,8 @@ namespace FinanceChargesListener.UseCase
                                            ? Constants.EstimateTypeFile
                                            : Constants.ActualTypeFile;
 
-                                _logger.LogDebug($"Extracted the ChargeYear for Estimates Upload as {chargeYear}");
+                                _logger.LogDebug($"Extracted File Type - {chargeSubGroup} Upload as {chargeYear}");
+                                _logger.LogDebug($"Extracted Charge Year - {chargeYear}");
                             }
                             else
                             {
@@ -412,7 +413,7 @@ namespace FinanceChargesListener.UseCase
                                 TargetId = Guid.Parse(Constants.HackneyRootAssetId),
                                 SubmitDate = DateTime.UtcNow,
                                 AssetName = Constants.RootAsset,
-                                SumamryYear = chargeYear,
+                                SummaryYear = chargeYear,
                                 TargetType = TargetType.NA,
                                 TotalServiceCharges = totalEstimateCharge,
                                 TotalDwellings = excelData.Count(),
@@ -496,7 +497,7 @@ namespace FinanceChargesListener.UseCase
                         TargetId = id,
                         SubmitDate = DateTime.UtcNow,
                         AssetName = assetName,
-                        SumamryYear = chargeYear,
+                        SummaryYear = chargeYear,
                         TargetType = targetType,
                         TotalServiceCharges = Math.Round(totalCharge, 2),
                         TotalDwellings = totalDwellingCount,
