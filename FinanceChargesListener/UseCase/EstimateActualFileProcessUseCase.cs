@@ -70,7 +70,7 @@ namespace FinanceChargesListener.UseCase
                 var fileData = JsonSerializer.Deserialize<EntityFileMessageSqs>(message?.EventData?.NewData?.ToString() ?? string.Empty, jsonSerializerOptions);
                 var s3file = await _awsS3FileService.GetFile(bucketName, fileData.RelativePath).ConfigureAwait(false);
                 var recordsCount = 0;
-               
+
 
 
                 Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
