@@ -55,7 +55,7 @@ namespace FinanceChargesListener.Gateway
                     }
                 };
                 var response = await _dynamoDb.ScanAsync(scanRequest).ConfigureAwait(false);
-                var responseAssets = response.Items.Select(x => x.GetChargeKeys());
+                var responseAssets = response.Items.Select(x => x.GetAssetKeys());
                 return new AssetPaginationResponse()
                 {
                     Assets = responseAssets?.ToList()
