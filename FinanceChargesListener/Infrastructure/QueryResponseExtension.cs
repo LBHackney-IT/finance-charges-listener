@@ -4,6 +4,7 @@ using Hackney.Shared.Asset.Domain;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 
 namespace FinanceChargesListener.Infrastructure
 {
@@ -60,7 +61,28 @@ namespace FinanceChargesListener.Infrastructure
                 };
             }
         }
-        public static AssetKeys GetChargeKeys(this Dictionary<string, AttributeValue> scanResponseItem)
+        public static AssetKeys GetAssetKeys(this Dictionary<string, AttributeValue> scanResponseItem)
            => new AssetKeys(Guid.Parse(scanResponseItem["id"].S), scanResponseItem["assetId"].S);
+
+        public static ChargeKeys GetChargeKeys(this Dictionary<string, AttributeValue> scanResponseItem)
+           => new ChargeKeys(Guid.Parse(scanResponseItem["id"].S), Guid.Parse(scanResponseItem["target_id"].S));
+
+        /// <summary>
+        /// Returns a list of WriteRequest objects with [id] attributes only
+        /// </summary>
+        /// <param name="chargeIds"></param>
+        /// <returns></returns>
+        public static IEnumerable<WriteRequest> ToWriteRequests(this IEnumerable<ChargeKeys> chargeIds)
+            => chargeIds.Select(c => new WriteRequest
+            {
+                DeleteRequest = new DeleteRequest
+                {
+                    Key = new Dictionary<string, AttributeValue>
+                    {
+                        { "id", new AttributeValue { S = c.Id.ToString() } },
+                        { "target_id", new AttributeValue { S = c.TargetId.ToString() } }
+                    }
+                }
+            });
     }
 }

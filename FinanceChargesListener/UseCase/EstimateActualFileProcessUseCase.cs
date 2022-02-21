@@ -36,6 +36,7 @@ namespace FinanceChargesListener.UseCase
         private static List<Asset> _blockFullList = new List<Asset>();
         private static List<Asset> _estateFullList = new List<Asset>();
         private static List<Charge> _propertyCharges = new List<Charge>();
+        private static List<ChargeKeys> _chargeKeysToDelete = new List<ChargeKeys>();
 
         public EstimateActualFileProcessUseCase(
             IAwsS3FileService awsS3FileService,
@@ -61,12 +62,23 @@ namespace FinanceChargesListener.UseCase
             var bucketName = Environment.GetEnvironmentVariable("CHARGES_BUCKET_NAME");
             short chargeYear = 0;
             var chargeSubGroup = string.Empty;
+            var checkCharge = Guid.Empty;
+            bool chergeExists = false;
 
             if (message?.EventData?.NewData != null)
             {
                 var fileData = JsonSerializer.Deserialize<EntityFileMessageSqs>(message?.EventData?.NewData?.ToString() ?? string.Empty, jsonSerializerOptions);
                 var s3file = await _awsS3FileService.GetFile(bucketName, fileData.RelativePath).ConfigureAwait(false);
                 var recordsCount = 0;
+                var chargeData = await _chargesApiGateway.GetChargeByTargetIdAsync(checkCharge).ConfigureAwait(false);
+                if (chargeData != null && chargeData.Any())
+                {
+                    chergeExists = true;
+                    _chargeKeysToDelete = await _chargesApiGateway.ScanByYearGroupSubGroup(chargeYear, ChargeGroup.Leaseholders,
+                               Enum.Parse<ChargeSubGroup>(chargeSubGroup)).ConfigureAwait(false);
+                    _logger.LogDebug($"Charge Delete Count {_chargeKeysToDelete.Count}");
+                }
+
 
                 Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
@@ -138,27 +150,6 @@ namespace FinanceChargesListener.UseCase
                     }
                 }
 
-
-                // Extract Blocks List and Estate List by Scanning Assets
-                //if (fileData.StepNumber == 1)
-                //{
-                //    var blocksScanList = await _assetGateway.GetAllByAssetType(AssetType.Block.ToString()).ConfigureAwait(false);
-                //    if (blocksScanList != null && blocksScanList.Assets != null && blocksScanList.Assets.Any())
-                //    {
-                //        _blockFullList.AddRange(blocksScanList.Assets);
-                //    }
-                //    _logger.LogDebug($"Extracted the Block Assets Total {_blockFullList.Count}");
-
-                //    var estateScanList = await _assetGateway.GetAllByAssetType(AssetType.Estate.ToString()).ConfigureAwait(false);
-                //    if (estateScanList != null && estateScanList.Assets != null && estateScanList.Assets.Any())
-                //    {
-                //        _estateFullList.AddRange(estateScanList.Assets);
-                //    }
-                //    _logger.LogDebug($"Extracted the Estate Assets Total {_estateFullList.Count}");
-
-                //    await PushMessageToSNS(fileData).ConfigureAwait(false);
-                //}
-
                 // Read Excel ,
                 // Get All Dwelling Asset,
                 // Transform Asset Id,
@@ -215,13 +206,44 @@ namespace FinanceChargesListener.UseCase
                     return;
                 }
 
+                if (fileData.StepNumber == 2)
+                {
+                    _logger.LogDebug($"Step {fileData.StepNumber}");
+                    if (excelData != null)
+                    {
+
+                        if (chergeExists || fileData.WriteIndex > 0)
+                        {
+                            _logger.LogDebug($"Property Charge Exists for {chargeYear} {chargeSubGroup}");
+                            _logger.LogDebug($"Property Charge Delete Starting");
+
+                            var data = _chargeKeysToDelete.OrderBy(x => x.TargetId).Skip(fileData.WriteIndex * 500).Take(500).ToList();
+
+                            if (data != null && data.Any())
+                            {
+                                int index = fileData.WriteIndex + 1;
+                                _logger.LogDebug($"Write Index Value : {index}");
+                                await _chargesApiGateway.DeleteBatchAsync(data, Constants.PerBatchProcessingCount).ConfigureAwait(false);
+                                _logger.LogDebug($"Charge Delete Completed");
+
+                                await PushMessageToSNS(fileData, index, false).ConfigureAwait(false);
+                            }
+                            else
+                                await PushMessageToSNS(fileData, 0).ConfigureAwait(false);
+                            _logger.LogDebug($"Charge Delete Completed");
+
+                        }
+                        return;
+                    }
+
+                }
                 // Get Excel Data
                 // Group by Block Id and Estate Id
                 // Create Block Charges List
                 // Create Estate Charges List
                 // Create Hackney Total Charge
                 // Write All Property Charges
-                if (fileData.StepNumber == 2)
+                if (fileData.StepNumber == 3)
                 {
                     _logger.LogDebug($"Step {fileData.StepNumber}");
                     if (excelData != null)
@@ -251,16 +273,47 @@ namespace FinanceChargesListener.UseCase
                 // Write All Block Charges
                 // Write All Estate Charges
                 // Write Hackney Total Charge
-                if (fileData.StepNumber == 3)
+                if (fileData.StepNumber == 4)
                 {
                     _logger.LogDebug($"Step {fileData.StepNumber}");
                     // Estate, Block and Hackney Totals 
                     var blockGroup = excelData.GroupBy(x => x.BlockId).ToList();
-                    var estateGroup = excelData.GroupBy(x => x.EstateId).ToList();
 
                     var blockCharges = await GetSummarisedChargesList(blockGroup, _blockFullList, AssetType.Block.ToString(),
                        ChargeGroup.Leaseholders, chargeSubGroup, Constants.ChargesListenerUserName, chargeYear);
                     _logger.LogDebug($"Block Charges formation Process completed with total record count as : {blockCharges.Count()}");
+
+                    var data = blockCharges.OrderBy(x => x.TargetId).Skip(fileData.WriteIndex * 500).Take(500).ToList();
+                    _logger.LogDebug($"Block Charges Write Starting");
+
+                    if (data != null && data.Any())
+                    {
+                        var writeResult = await WriteChargeItems(data).ConfigureAwait(false); //await WriteChargeItems(blockCharges).ConfigureAwait(false);
+
+                        _logger.LogDebug($"Block Charges Write Complete");
+
+                        int index = fileData.WriteIndex + 1;
+                        _logger.LogDebug($"Write Index Value : {index}");
+
+                        if (writeResult)
+                            await PushMessageToSNS(fileData, index, false).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        _logger.LogDebug($"Block Charges FULL Write Complete");
+                        await PushMessageToSNS(fileData, 0).ConfigureAwait(false);
+                    }
+
+
+                    return;
+                }
+
+                if (fileData.StepNumber == 5)
+                {
+                    _logger.LogDebug($"Step {fileData.StepNumber}");
+                    // Estate, Block and Hackney Totals 
+
+                    var estateGroup = excelData.GroupBy(x => x.EstateId).ToList();
 
                     var estateCharges = await GetSummarisedChargesList(estateGroup, _estateFullList, AssetType.Estate.ToString(),
                        ChargeGroup.Leaseholders, chargeSubGroup, Constants.ChargesListenerUserName, chargeYear);
@@ -270,10 +323,10 @@ namespace FinanceChargesListener.UseCase
                        ChargeGroup.Leaseholders, chargeSubGroup, Constants.ChargesListenerUserName, chargeYear);
                     _logger.LogDebug($"Hackney Total Charges formation Process completed");
 
-                    _logger.LogDebug($"Block, Estate, Hackney Charges Write Starting");
-                    var writeResult = await WriteChargeItems(blockCharges).ConfigureAwait(false); //await WriteChargeItems(blockCharges).ConfigureAwait(false);
-                    if (writeResult)
-                        writeResult = await WriteChargeItems(estateCharges).ConfigureAwait(false); //await WriteChargeItems(estateCharges).ConfigureAwait(false);
+                    _logger.LogDebug($"Estate, Hackney Charges Write Starting");
+
+
+                    var writeResult = await WriteChargeItems(estateCharges).ConfigureAwait(false); //await WriteChargeItems(estateCharges).ConfigureAwait(false);
                     if (writeResult)
                         await _chargesApiGateway.AddChargeAsync(hackneyTotalCharge).ConfigureAwait(false);
                     _logger.LogDebug($"Block, Estate, Hackney Charges Write Starting");
@@ -287,7 +340,7 @@ namespace FinanceChargesListener.UseCase
                 // Group By Block Id
                 // Get Block Summaries list
                 // Write Block Summaries List
-                if (fileData.StepNumber == 4)
+                if (fileData.StepNumber == 6)
                 {
                     _logger.LogDebug($"Step {fileData.StepNumber}");
                     if (excelData != null)
@@ -297,10 +350,24 @@ namespace FinanceChargesListener.UseCase
                         // Financial Summary Load
                         // Block Summary Load
                         var blockSummaries = GetAssetSummariesByType(blockGroup, _blockFullList, excelData, TargetType.Block, chargeYear, chargeSubGroup);
-                        var blockSummaryLoadResult = await _financialSummaryService.AddEstimateActualSummaryBatch(blockSummaries.ToList()).ConfigureAwait(false);
 
-                        if (blockSummaryLoadResult)
+                        var data = blockSummaries.OrderBy(x => x.TargetId).Skip(fileData.WriteIndex * 100).Take(100).ToList();
+                        if (data != null && data.Any())
+                        {
+                            var blockSummaryLoadResult = await _financialSummaryService.AddEstimateActualSummaryBatch(data.ToList()).ConfigureAwait(false);
+
+                            int index = fileData.WriteIndex + 1;
+                            _logger.LogDebug($"Write Index Value : {index}");
+
+                            if (blockSummaryLoadResult)
+                                await PushMessageToSNS(fileData, index, false).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            _logger.LogDebug($"Block Summaries FULL Write Complete");
                             await PushMessageToSNS(fileData, 0).ConfigureAwait(false);
+                        }
+
                     }
                     return;
                 }
@@ -311,7 +378,7 @@ namespace FinanceChargesListener.UseCase
                 // Write Estate Summaries List
                 // Write Hackney Total Sumamry
                 // Update File Tag to Processed
-                if (fileData.StepNumber == 5)
+                if (fileData.StepNumber == 7)
                 {
                     _logger.LogDebug($"Step {fileData.StepNumber}");
                     if (excelData != null)
@@ -321,35 +388,45 @@ namespace FinanceChargesListener.UseCase
                         // Financial Summary Load
                         // Estate Summary Load
                         var estateSumaries = GetAssetSummariesByType(estateGroup, _estateFullList, excelData, TargetType.Estate, chargeYear, chargeSubGroup);
-                        var estateSummaryLoadResult = await _financialSummaryService.AddEstimateActualSummaryBatch(estateSumaries.ToList()).ConfigureAwait(false);
 
-                        // Hackney Total Summary Load
-                        var freeholdersCount = Helper.GetFreeholdersCount(excelData);
-                        var leaseholdersCount = Helper.GetLeaseholdersCount(excelData);
-                        var totalEstimateCharge = Convert.ToInt32(excelData.Sum(x => x.TotalCharge));
-
-                        var addSummaryRequest = new AddAssetSummaryRequest
+                        var data = estateSumaries.OrderBy(x => x.TargetId).Skip(fileData.WriteIndex * 100).Take(100).ToList();
+                        if (data != null && data.Any())
                         {
-                            TargetId = Guid.Parse(Constants.HackneyRootAssetId),
-                            SubmitDate = DateTime.UtcNow,
-                            AssetName = Constants.RootAsset,
-                            SumamryYear = chargeYear,
-                            TargetType = TargetType.NA,
-                            TotalServiceCharges = totalEstimateCharge,
-                            TotalDwellings = excelData.Count(),
-                            TotalFreeholders = freeholdersCount,
-                            TotalLeaseholders = leaseholdersCount,
-                            ValuesType = Enum.Parse<ValuesType>(chargeSubGroup)
-                        };
-                        var loadSummaryResult = await _financialSummaryService.AddEstimateSummary(addSummaryRequest).ConfigureAwait(false);
+                            var estateSummaryLoadResult = await _financialSummaryService.AddEstimateActualSummaryBatch(data.ToList()).ConfigureAwait(false);
+                            int index = fileData.WriteIndex + 1;
+                            _logger.LogDebug($"Write Index Value : {index}");
+                            if (estateSummaryLoadResult)
+                                await PushMessageToSNS(fileData, index, false).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            // Hackney Total Summary Load
+                            var freeholdersCount = Helper.GetFreeholdersCount(excelData);
+                            var leaseholdersCount = Helper.GetLeaseholdersCount(excelData);
+                            var totalEstimateCharge = Convert.ToInt32(excelData.Sum(x => x.TotalCharge));
 
-                        _logger.LogDebug($"Charges Summaries loading Process completed with total record count loaded : {excelData.Count}");
+                            var addSummaryRequest = new AddAssetSummaryRequest
+                            {
+                                TargetId = Guid.Parse(Constants.HackneyRootAssetId),
+                                SubmitDate = DateTime.UtcNow,
+                                AssetName = Constants.RootAsset,
+                                SumamryYear = chargeYear,
+                                TargetType = TargetType.NA,
+                                TotalServiceCharges = totalEstimateCharge,
+                                TotalDwellings = excelData.Count(),
+                                TotalFreeholders = freeholdersCount,
+                                TotalLeaseholders = leaseholdersCount,
+                                ValuesType = Enum.Parse<ValuesType>(chargeSubGroup)
+                            };
+                            var loadSummaryResult = await _financialSummaryService.AddEstimateSummary(addSummaryRequest).ConfigureAwait(false);
+                            _logger.LogDebug($"Charges Summaries loading Process completed with total record count loaded : {excelData.Count}");
 
-                        // Update File tag status
-                        var updateTagResponse = await _awsS3FileService.UpdateFileTag(bucketName, fileData.RelativePath, Constants.SuccessfulProcessingTagValue).ConfigureAwait(false);
-                        if (updateTagResponse)
-                            _logger.LogDebug($"Estimate or Actual file processed successfully");
-
+                            // Update File tag status
+                            var updateTagResponse = await _awsS3FileService.UpdateFileTag(bucketName, fileData.RelativePath, Constants.SuccessfulProcessingTagValue).ConfigureAwait(false);
+                            if (updateTagResponse)
+                                _logger.LogDebug($"{chargeSubGroup} file processed successfully");
+                        }
+                        return;
                     }
                 }
                 //var response = await _awsS3FileService.GetFile(bucketName, fileData.RelativePath).ConfigureAwait(false);
@@ -680,7 +757,7 @@ namespace FinanceChargesListener.UseCase
                 loadResult = await _chargesApiGateway.AddTransactionBatchAsync(itemsToWrite.ToList()).ConfigureAwait(false);
                 if (!loadResult)
                     throw new Exception("Something wrong happend while writing charges");
-                Thread.Sleep(1000);
+                Thread.Sleep(2000);
             }
             return loadResult;
         }
