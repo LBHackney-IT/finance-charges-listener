@@ -757,7 +757,7 @@ namespace FinanceChargesListener.UseCase
                 loadResult = await _chargesApiGateway.AddTransactionBatchAsync(itemsToWrite.ToList()).ConfigureAwait(false);
                 if (!loadResult)
                     throw new Exception("Something wrong happend while writing charges");
-                Thread.Sleep(1000);
+                Thread.Sleep(2000);
             }
             return loadResult;
         }
