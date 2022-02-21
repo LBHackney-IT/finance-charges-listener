@@ -282,7 +282,7 @@ namespace FinanceChargesListener.UseCase
 
                     _blockCharges = await GetSummarisedChargesList(blockGroup, _blockFullList, AssetType.Block.ToString(),
                        ChargeGroup.Leaseholders, chargeSubGroup, Constants.ChargesListenerUserName, chargeYear);
-                    _logger.LogDebug($"Block Charges formation Process completed with total record count as : {blockCharges.Count()}");
+                    _logger.LogDebug($"Block Charges formation Process completed with total record count as : {_blockCharges.Count()}");
 
                     var data = _blockCharges.OrderBy(x => x.TargetId).Skip(fileData.WriteIndex * 500).Take(500).ToList();
                     _logger.LogDebug($"Block Charges Write Starting");
