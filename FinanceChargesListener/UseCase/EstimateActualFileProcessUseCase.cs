@@ -388,6 +388,7 @@ namespace FinanceChargesListener.UseCase
                         var estateGroup = excelData.GroupBy(x => x.EstateId).ToList();
                         // Financial Summary Load
                         // Estate Summary Load
+                        _logger.LogDebug($"Estate full list count {_estateFullList.Count}");
                         var estateSumaries = GetAssetSummariesByType(estateGroup, _estateFullList, excelData, TargetType.Estate, chargeYear, chargeSubGroup);
 
                         var data = estateSumaries.OrderBy(x => x.TargetId).Skip(fileData.WriteIndex * 100).Take(100).ToList();
