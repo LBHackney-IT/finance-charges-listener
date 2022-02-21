@@ -139,7 +139,7 @@ namespace FinanceChargesListener.UseCase
                             }
                             recordsCount++;
                         }
-                        
+
                     }
                 }
                 //var chargeData = await _chargesApiGateway.GetChargeByTargetIdAsync(excelData.First().AssetId).ConfigureAwait(false);
@@ -288,7 +288,7 @@ namespace FinanceChargesListener.UseCase
 
                     if (data != null && data.Any())
                     {
-                        var writeResult = await WriteChargeItems(data).ConfigureAwait(false); 
+                        var writeResult = await WriteChargeItems(data).ConfigureAwait(false);
 
                         _logger.LogDebug($"Block Charges Write Complete");
 
@@ -433,7 +433,7 @@ namespace FinanceChargesListener.UseCase
                 }
             }
         }
-       
+
         private async Task PushMessageToSNS(EntityFileMessageSqs fileData, int writeIndex, bool toNextStep = true)
         {
             var messageToPublish = new EntityFileMessageSqs();
