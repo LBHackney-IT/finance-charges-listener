@@ -78,7 +78,7 @@ namespace FinanceChargesListener.UseCase
             }
 
             var chargesDetails = chargesToUpdate.SelectMany(c => c.DetailedCharges);
-
+            decimal totalSumaryDifference = updatedDetailedCharges.Sum(_ => _.DifferenceAmount);
             foreach (var updatedChargeDetail in updatedDetailedCharges)
             {
                 var existingDetailsToUpdate = chargesDetails
@@ -88,34 +88,26 @@ namespace FinanceChargesListener.UseCase
 
                 existingDetailsToUpdate.ForEach(cd =>
                 {
-                    cd.Amount = updatedChargeDetail.NewAmount;
+                    cd.Amount += updatedChargeDetail.DifferenceAmount;
                 });
             }
 
             await _chargesGateway.SaveBatchAsync(chargesToUpdate.ToList());
 
-            var assetSummary = await _summaryApiHttpClient.GetAssetEstimate(chargeEventMessage.EntityTargetId);
-
-            // Hanna Holasava
-            // What is no asset esimate summary was fount?
-            // Should we create new one?
-            if (assetSummary == null)
+            foreach (var item in chargesToUpdate)
             {
-                return;
+                var assetSummary = await _summaryApiHttpClient.GetAssetEstimate(item.TargetId, updatedCharge.ChargeYear, updatedCharge.ChargeSubGroup.ToString());
+                if (assetSummary == null)
+                {
+                    throw new ArgumentException($"Cannot load Summary from Financial Summary for asset id: {item.TargetId}");
+                }
+                decimal newTotalServiceCharges = assetSummary.TotalServiceCharges + totalSumaryDifference;
+
+                await _summaryApiHttpClient.UpdateTotalServiceCharges(item.TargetId, newTotalServiceCharges,
+                    updatedCharge.ChargeYear, assetSummary.ValuesType.ToString());
             }
-            decimal newTotalServiceCharges = assetSummary.TotalServiceCharges + GetServiceChargeDifference(updatedCharge, updatedDetailedCharges);
 
-            await _summaryApiHttpClient.UpdateTotalServiceCharges(chargeEventMessage.EntityTargetId, newTotalServiceCharges);
-        }
 
-        private decimal GetServiceChargeDifference(Charge existingModel, List<DetailedChargeChange> detailedChargesToUpdate)
-        {
-            return existingModel.DetailedCharges
-                .Join(detailedChargesToUpdate,
-                    outer => new { outer.SubType, outer.ChargeType },
-                    inner => new { inner.SubType, inner.ChargeType },
-                    (old, updated) => new { OldAmout = old.Amount, NewAmount = updated.NewAmount })
-                .Sum(_ => _.NewAmount - _.OldAmout);
         }
     }
 }
