@@ -32,9 +32,10 @@ namespace FinanceChargesListener.Gateway
         }
 
         [LogCall]
-        public async Task<AssetEstimateSummary> GetAssetEstimate(Guid assetId)
+        public async Task<AssetEstimateSummary> GetAssetEstimate(Guid assetId, short chargeYear, string valuesType)
         {
-            var uri = new Uri(_apiRoute + "api/v1/asset-summary/estimates/" + assetId);
+            var summaryValuesType = Enum.Parse<ValuesType>(valuesType);
+            var uri = new Uri(_apiRoute + $"api/v1/asset-summary/estimates/{assetId}?summaryyear={chargeYear}&valuestype={summaryValuesType}");
 
             var response = await _httpClient.GetAsync(uri).ConfigureAwait(false);
             var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -59,9 +60,10 @@ namespace FinanceChargesListener.Gateway
         }
 
         [LogCall]
-        public async Task UpdateTotalServiceCharges(Guid assetId, decimal newTotalServiceCharges)
+        public async Task UpdateTotalServiceCharges(Guid assetId, decimal newTotalServiceCharges, short summaryYear, string valuesType)
         {
-            var uri = new Uri(_apiRoute + "/api/v1/asset-summary/estimates/" + assetId);
+            var summaryValuesType = Enum.Parse<ValuesType>(valuesType);
+            var uri = new Uri(_apiRoute + $"api/v1/asset-summary/estimates/{ assetId }?summaryyear={summaryYear}&valuestype={summaryValuesType}");
 
             var jsonPatchDocument = new JsonPatchDocument<AssetEstimateSummary>();
             jsonPatchDocument.Replace(_ => _.TotalServiceCharges, newTotalServiceCharges);

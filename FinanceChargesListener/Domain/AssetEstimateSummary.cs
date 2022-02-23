@@ -33,5 +33,7 @@ namespace FinanceChargesListener.Domain
         public int TotalFreeholders { get; set; }
 
         public int TotalDwellings { get; set; }
+
+        public ValuesType ValuesType { get; set; }
     }
 }

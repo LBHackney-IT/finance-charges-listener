@@ -24,7 +24,7 @@ namespace FinanceChargesListener.Domain
         public string Frequency { get; set; }
 
         /// <example>50</example>
-        [Range(0, (double) decimal.MaxValue, ErrorMessage = "The amount value is wrong")]
+        [Range((double) decimal.MinValue, (double) decimal.MaxValue, ErrorMessage = "The amount value is wrong")]
         public decimal Amount { get; set; }
 
         /// <example>2022-02-09T12:41:15.583Z</example>
