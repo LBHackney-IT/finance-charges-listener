@@ -69,7 +69,7 @@ namespace FinanceChargesListener.UseCase
                 var s3file = await _awsS3FileService.GetFile(bucketName, fileData.RelativePath).ConfigureAwait(false);
                 try
                 {
-                   
+
                     var recordsCount = 0;
 
                     Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -441,7 +441,7 @@ namespace FinanceChargesListener.UseCase
                     await _awsS3FileService.UpdateFileTag(bucketName, fileData.RelativePath, Constants.FailedProcessingTagValue).ConfigureAwait(false);
                     throw new Exception($"Failed to process the file, Exception : {ex.Message}");
                 }
-               
+
             }
         }
 
