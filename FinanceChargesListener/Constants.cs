@@ -19,7 +19,7 @@ namespace FinanceChargesListener
         public const string RootAsset = "Hackney Homes Limited";
         public const string TagKey = "status";
         public const string SuccessfulProcessingTagValue = "Processed";
-        public const string FailedProcessingTagValue = "Processed";
+        public const string FailedProcessingTagValue = "Failed";
         public const int PageSize = 8000;
         public const int Page = 1;
         public const int PerBatchProcessingCount = 25;

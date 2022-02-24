@@ -97,17 +97,14 @@ namespace FinanceChargesListener.UseCase
             foreach (var item in chargesToUpdate)
             {
                 var assetSummary = await _summaryApiHttpClient.GetAssetEstimate(item.TargetId, updatedCharge.ChargeYear, updatedCharge.ChargeSubGroup.ToString());
-                if (assetSummary == null)
+                if (assetSummary != null)
                 {
-                    throw new ArgumentException($"Cannot load Summary from Financial Summary for asset id: {item.TargetId}");
+                    var newTotalServiceCharges = assetSummary.TotalServiceCharges + totalSumaryDifference;
+
+                    await _summaryApiHttpClient.UpdateTotalServiceCharges(item.TargetId, newTotalServiceCharges,
+                        updatedCharge.ChargeYear, assetSummary.ValuesType.ToString());
                 }
-                decimal newTotalServiceCharges = assetSummary.TotalServiceCharges + totalSumaryDifference;
-
-                await _summaryApiHttpClient.UpdateTotalServiceCharges(item.TargetId, newTotalServiceCharges,
-                    updatedCharge.ChargeYear, assetSummary.ValuesType.ToString());
             }
-
-
         }
     }
 }
