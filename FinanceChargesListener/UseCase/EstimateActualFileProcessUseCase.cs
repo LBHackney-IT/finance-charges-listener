@@ -151,18 +151,14 @@ namespace FinanceChargesListener.UseCase
                     {
                         _logger.LogDebug($"Step {fileData.StepNumber}");
 
-                        if (fileData.WriteIndex > 0)
-                        {
-                            var chargeSubGroupVal = Enum.Parse<ChargeSubGroup>(chargeSubGroup);
-                            _chargeKeysToDelete = await _chargesApiGateway.GetChargesByYearGroupSubGroup(chargeYear,
-                                ChargeGroup.Leaseholders, chargeSubGroupVal).ConfigureAwait(false);
+                        var chargeSubGroupVal = Enum.Parse<ChargeSubGroup>(chargeSubGroup);
+                        _chargeKeysToDelete = await _chargesApiGateway.GetChargesByYearGroupSubGroup(chargeYear,
+                            ChargeGroup.Leaseholders, chargeSubGroupVal).ConfigureAwait(false);
 
-                            _logger.LogDebug($"Property Charge Exists for {chargeYear} {chargeSubGroup}");
-                            _logger.LogDebug($"Property Charges Count : {_chargeKeysToDelete.Count}");
+                        _logger.LogDebug($"Property Charge Exists for {chargeYear} {chargeSubGroup}");
+                        _logger.LogDebug($"Property Charges Count : {_chargeKeysToDelete.Count}");
 
-                            await PushMessageToSns(fileData, 0).ConfigureAwait(false);
-
-                        }
+                        await PushMessageToSns(fileData, 0).ConfigureAwait(false);
 
                         return;
                     }
