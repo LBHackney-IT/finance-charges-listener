@@ -250,7 +250,7 @@ namespace FinanceChargesListener.UseCase
                         await PushMessageToSns(fileData, 0).ConfigureAwait(false);
                         return;
                     }
-                   
+
                     // Get Excel Data
                     // Group by Block Id and Estate Id
                     // Create Block Charges List
