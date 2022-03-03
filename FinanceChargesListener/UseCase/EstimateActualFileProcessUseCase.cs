@@ -34,7 +34,7 @@ namespace FinanceChargesListener.UseCase
         private static List<Asset> _estateFullList = new List<Asset>();
         private static List<Charge> _propertyCharges = new List<Charge>();
         private static List<Charge> _blockCharges = new List<Charge>();
-        //private static List<ChargeKeys> _chargeKeysToDelete = new List<ChargeKeys>();
+        private static List<ChargeKeys> _chargeKeysToDelete = new List<ChargeKeys>();
 
         public EstimateActualFileProcessUseCase(
             IAwsS3FileService awsS3FileService,
@@ -66,7 +66,7 @@ namespace FinanceChargesListener.UseCase
             if (message?.EventData?.NewData != null)
             {
                 var fileData = JsonSerializer.Deserialize<EntityFileMessageSqs>(message?.EventData?.NewData?.ToString() ?? string.Empty, jsonSerializerOptions);
-                var s3file = await _awsS3FileService.GetFile(bucketName, fileData.RelativePath).ConfigureAwait(false);
+                var s3File = await _awsS3FileService.GetFile(bucketName, fileData.RelativePath).ConfigureAwait(false);
                 try
                 {
 
@@ -78,7 +78,7 @@ namespace FinanceChargesListener.UseCase
                     // Read Excel
                     using (var stream = new MemoryStream())
                     {
-                        s3file.CopyTo(stream);
+                        s3File.CopyTo(stream);
                         stream.Position = 1;
 
                         // Excel Read Process
@@ -146,22 +146,65 @@ namespace FinanceChargesListener.UseCase
 
                         }
                     }
-                    //var chargeData = await _chargesApiGateway.GetChargeByTargetIdAsync(excelData.First().AssetId).ConfigureAwait(false);
-                    //if (chargeData != null && chargeData.Any())
-                    //{
-                    //    chergeExists = true;
-                    //    _chargeKeysToDelete = await _chargesApiGateway.ScanByYearGroupSubGroup(chargeYear, ChargeGroup.Leaseholders,
-                    //               Enum.Parse<ChargeSubGroup>(chargeSubGroup)).ConfigureAwait(false);
-                    //    _logger.LogDebug($"Charge Delete Count {_chargeKeysToDelete.Count}");
-                    //}
+                    // Charges Scan Step
+                    if (fileData.StepNumber == 1)
+                    {
+                        _logger.LogDebug($"Step {fileData.StepNumber}");
+
+                        if (fileData.WriteIndex > 0)
+                        {
+                            var chargeSubGroupVal = Enum.Parse<ChargeSubGroup>(chargeSubGroup);
+                            _chargeKeysToDelete = await _chargesApiGateway.GetChargesByYearGroupSubGroup(chargeYear,
+                                ChargeGroup.Leaseholders, chargeSubGroupVal).ConfigureAwait(false);
+
+                            _logger.LogDebug($"Property Charge Exists for {chargeYear} {chargeSubGroup}");
+                            _logger.LogDebug($"Property Charges Count : {_chargeKeysToDelete.Count}");
+
+                            await PushMessageToSns(fileData, 0).ConfigureAwait(false);
+
+                        }
+
+                        return;
+                    }
+
+                    // Delete Charges Step
+                    if (fileData.StepNumber == 2)
+                    {
+                        _logger.LogDebug($"Step {fileData.StepNumber}");
+                        if (_chargeKeysToDelete.Any())
+                        {
+
+                            _logger.LogDebug($"Property Charge Exists for {chargeYear} {chargeSubGroup}");
+                            _logger.LogDebug($"Property Charge Delete Starting");
+
+                            var data = _chargeKeysToDelete.Skip(fileData.WriteIndex * 500).Take(500).ToList();
+
+                            if (data != null && data.Any())
+                            {
+                                int index = fileData.WriteIndex + 1;
+                                _logger.LogDebug($"Delete Index Value : {index}");
+                                await _chargesApiGateway.DeleteBatchAsync(data, Constants.PerBatchProcessingCount)
+                                    .ConfigureAwait(false);
+                                _logger.LogDebug($"Charge Delete Completed Index: {index}");
+
+                                await PushMessageToSns(fileData, index, false).ConfigureAwait(false);
+                            }
+                            //else
+                            //    await PushMessageToSns(fileData, 0).ConfigureAwait(false);
+
+                            _logger.LogDebug($"Charge Delete Completed");
+
+                        }
+                        return;
+                    }
                     // Read Excel ,
                     // Get All Dwelling Asset,
                     // Transform Asset Id,
                     // Form Property Charges 
-                    if (fileData.StepNumber == 1)
+                    if (fileData.StepNumber == 3)
                     {
                         _logger.LogDebug($"Step {fileData.StepNumber}");
-                        if (excelData != null)
+                        if (excelData.Any())
                         {
                             var estimatesActual = excelData;
 
@@ -204,48 +247,17 @@ namespace FinanceChargesListener.UseCase
                                     ChargeGroup.Leaseholders, chargeSubGroup, createdBy, chargeYear, item));
                             }
                         }
-                        await PushMessageToSNS(fileData, 0).ConfigureAwait(false);
+                        await PushMessageToSns(fileData, 0).ConfigureAwait(false);
                         return;
                     }
 
-                    //if (fileData.StepNumber == 2)
-                    //{
-                    //    _logger.LogDebug($"Step {fileData.StepNumber}");
-                    //    if (excelData != null)
-                    //    {
-
-                    //        if (chergeExists || fileData.WriteIndex > 0)
-                    //        {
-                    //            _logger.LogDebug($"Property Charge Exists for {chargeYear} {chargeSubGroup}");
-                    //            _logger.LogDebug($"Property Charge Delete Starting");
-
-                    //            var data = _chargeKeysToDelete.OrderBy(x => x.TargetId).Skip(fileData.WriteIndex * 500).Take(500).ToList();
-
-                    //            if (data != null && data.Any())
-                    //            {
-                    //                int index = fileData.WriteIndex + 1;
-                    //                _logger.LogDebug($"Write Index Value : {index}");
-                    //                await _chargesApiGateway.DeleteBatchAsync(data, Constants.PerBatchProcessingCount).ConfigureAwait(false);
-                    //                _logger.LogDebug($"Charge Delete Completed");
-
-                    //                await PushMessageToSNS(fileData, index, false).ConfigureAwait(false);
-                    //            }
-                    //            else
-                    //                await PushMessageToSNS(fileData, 0).ConfigureAwait(false);
-                    //            _logger.LogDebug($"Charge Delete Completed");
-
-                    //        }
-                    //        return;
-                    //    }
-
-                    //}
                     // Get Excel Data
                     // Group by Block Id and Estate Id
                     // Create Block Charges List
                     // Create Estate Charges List
                     // Create Hackney Total Charge
                     // Write All Property Charges
-                    if (fileData.StepNumber == 2)
+                    if (fileData.StepNumber == 4)
                     {
                         _logger.LogDebug($"Step {fileData.StepNumber}");
                         if (excelData != null)
@@ -264,10 +276,10 @@ namespace FinanceChargesListener.UseCase
                                 int index = fileData.WriteIndex + 1;
                                 _logger.LogDebug($"Write Index Value : {index}");
                                 if (writeResult)
-                                    await PushMessageToSNS(fileData, index, false).ConfigureAwait(false);
+                                    await PushMessageToSns(fileData, index, false).ConfigureAwait(false);
                             }
                             else
-                                await PushMessageToSNS(fileData, 0).ConfigureAwait(false);
+                                await PushMessageToSns(fileData, 0).ConfigureAwait(false);
                         }
                         return;
                     }
@@ -275,7 +287,7 @@ namespace FinanceChargesListener.UseCase
                     // Write All Block Charges
                     // Write All Estate Charges
                     // Write Hackney Total Charge
-                    if (fileData.StepNumber == 3)
+                    if (fileData.StepNumber == 5)
                     {
                         _logger.LogDebug($"Step {fileData.StepNumber}");
                         // Estate, Block and Hackney Totals 
@@ -300,17 +312,17 @@ namespace FinanceChargesListener.UseCase
                             _logger.LogDebug($"Write Index Value : {index}");
 
                             if (writeResult)
-                                await PushMessageToSNS(fileData, index, false).ConfigureAwait(false);
+                                await PushMessageToSns(fileData, index, false).ConfigureAwait(false);
                         }
                         else
                         {
                             _logger.LogDebug($"Block Charges FULL Write Complete");
-                            await PushMessageToSNS(fileData, 0).ConfigureAwait(false);
+                            await PushMessageToSns(fileData, 0).ConfigureAwait(false);
                         }
                         return;
                     }
 
-                    if (fileData.StepNumber == 4)
+                    if (fileData.StepNumber == 6)
                     {
                         _logger.LogDebug($"Step {fileData.StepNumber}");
 
@@ -334,7 +346,7 @@ namespace FinanceChargesListener.UseCase
                         _logger.LogDebug($"Block, Estate, Hackney Charges Write Starting");
 
                         if (writeResult)
-                            await PushMessageToSNS(fileData, 0).ConfigureAwait(false);
+                            await PushMessageToSns(fileData, 0).ConfigureAwait(false);
                         return;
                     }
 
@@ -342,7 +354,7 @@ namespace FinanceChargesListener.UseCase
                     // Group By Block Id
                     // Get Block Summaries list
                     // Write Block Summaries List
-                    if (fileData.StepNumber == 5)
+                    if (fileData.StepNumber == 7)
                     {
                         _logger.LogDebug($"Step {fileData.StepNumber}");
                         if (excelData != null)
@@ -362,12 +374,12 @@ namespace FinanceChargesListener.UseCase
                                 _logger.LogDebug($"Write Index Value : {index}");
 
                                 if (blockSummaryLoadResult)
-                                    await PushMessageToSNS(fileData, index, false).ConfigureAwait(false);
+                                    await PushMessageToSns(fileData, index, false).ConfigureAwait(false);
                             }
                             else
                             {
                                 _logger.LogDebug($"Block Summaries FULL Write Complete");
-                                await PushMessageToSNS(fileData, 0).ConfigureAwait(false);
+                                await PushMessageToSns(fileData, 0).ConfigureAwait(false);
                             }
                         }
                         return;
@@ -379,7 +391,7 @@ namespace FinanceChargesListener.UseCase
                     // Write Estate Summaries List
                     // Write Hackney Total Sumamry
                     // Update File Tag to Processed
-                    if (fileData.StepNumber == 6)
+                    if (fileData.StepNumber == 8)
                     {
                         _logger.LogDebug($"Step {fileData.StepNumber}");
                         if (excelData != null)
@@ -402,7 +414,7 @@ namespace FinanceChargesListener.UseCase
                                 int index = fileData.WriteIndex + 1;
                                 _logger.LogDebug($"Write Index Value : {index}");
                                 if (estateSummaryLoadResult)
-                                    await PushMessageToSNS(fileData, index, false).ConfigureAwait(false);
+                                    await PushMessageToSns(fileData, index, false).ConfigureAwait(false);
                             }
                             else
                             {
@@ -445,7 +457,7 @@ namespace FinanceChargesListener.UseCase
             }
         }
 
-        private async Task PushMessageToSNS(EntityFileMessageSqs fileData, int writeIndex, bool toNextStep = true)
+        private async Task PushMessageToSns(EntityFileMessageSqs fileData, int writeIndex, bool toNextStep = true)
         {
             var messageToPublish = new EntityFileMessageSqs();
             messageToPublish = fileData;
