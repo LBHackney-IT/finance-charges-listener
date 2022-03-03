@@ -173,24 +173,29 @@ namespace FinanceChargesListener.UseCase
                             _logger.LogDebug($"Property Charge Exists for {chargeYear} {chargeSubGroup}");
                             _logger.LogDebug($"Property Charge Delete Starting");
 
-                            var data = _chargeKeysToDelete.Skip(fileData.WriteIndex * 500).Take(500).ToList();
+                            int loopCount;
+                            if (_chargeKeysToDelete.Count % 500 == 0)
+                                loopCount = _chargeKeysToDelete.Count / 500;
+                            else
+                                loopCount = (_chargeKeysToDelete.Count / 500) + 1;
 
-                            if (data != null && data.Any())
+                            for (var index = 0; index < loopCount; index++)
                             {
-                                int index = fileData.WriteIndex + 1;
-                                _logger.LogDebug($"Delete Index Value : {index}");
-                                await _chargesApiGateway.DeleteBatchAsync(data, Constants.PerBatchProcessingCount)
-                                    .ConfigureAwait(false);
-                                _logger.LogDebug($"Charge Delete Completed Index: {index}");
+                                var data = _chargeKeysToDelete.Skip(index * 500).Take(500).ToList();
 
-                                await PushMessageToSns(fileData, index, false).ConfigureAwait(false);
+                                if (data != null && data.Any())
+                                {
+                                    _logger.LogDebug($"Delete Index Value : {index}");
+                                    await _chargesApiGateway.DeleteBatchAsync(data, Constants.PerBatchProcessingCount)
+                                        .ConfigureAwait(false);
+                                    _logger.LogDebug($"Charge Delete Completed Index: {index}");
+                                    Thread.Sleep(1000);
+                                }
                             }
-                            //else
-                            //    await PushMessageToSns(fileData, 0).ConfigureAwait(false);
-
-                            _logger.LogDebug($"Charge Delete Completed");
-
+                            _logger.LogDebug($"Charges Delete Completed for {chargeYear}  - {chargeSubGroup} ");
                         }
+                        _logger.LogDebug($"No Charge Exits for {chargeYear}  - {chargeSubGroup} ");
+                        await PushMessageToSns(fileData, 0).ConfigureAwait(false);
                         return;
                     }
                     // Read Excel ,
@@ -256,7 +261,7 @@ namespace FinanceChargesListener.UseCase
                     if (fileData.StepNumber == 4)
                     {
                         _logger.LogDebug($"Step {fileData.StepNumber}");
-                        if (excelData != null)
+                        if (excelData.Any())
                         {
                             if (!_propertyCharges.Any())
                                 _logger.LogDebug($"Property Charges is null");
@@ -353,7 +358,7 @@ namespace FinanceChargesListener.UseCase
                     if (fileData.StepNumber == 7)
                     {
                         _logger.LogDebug($"Step {fileData.StepNumber}");
-                        if (excelData != null)
+                        if (excelData.Any())
                         {
                             // Estate, Block and Hackney Totals 
                             var blockGroup = excelData.GroupBy(x => x.BlockId).ToList();
@@ -390,7 +395,7 @@ namespace FinanceChargesListener.UseCase
                     if (fileData.StepNumber == 8)
                     {
                         _logger.LogDebug($"Step {fileData.StepNumber}");
-                        if (excelData != null)
+                        if (excelData.Any())
                         {
                             // Estate, Block and Hackney Totals 
                             var estateGroup = excelData.GroupBy(x => x.EstateId).ToList();
@@ -553,7 +558,7 @@ namespace FinanceChargesListener.UseCase
                             numericalAssetId = numericalAssetId.PadLeft(8, '0');
                         }
 
-                        // SCAN ASSET Table
+                        // Call ASSET Information API
                         var assetDetails = await _assetInformationApiGateway.GetAssetByAssetIdAsync(numericalAssetId).ConfigureAwait(false);
                         if (assetDetails != null)
                             id = assetDetails.Id;
