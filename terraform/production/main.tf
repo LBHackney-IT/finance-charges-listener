@@ -63,7 +63,7 @@ resource "aws_sqs_queue" "charges_queue" {
   name                        = "chargesqueue.fifo"
   fifo_queue                  = true
   content_based_deduplication = true
-  visibility_timeout_seconds  = 600
+  visibility_timeout_seconds  = 900
   kms_master_key_id           = "alias/housing-production-cmk"           # This is a custom key
   kms_data_key_reuse_period_seconds = 300
   redrive_policy              = jsonencode({
