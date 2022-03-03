@@ -2,7 +2,7 @@ service: finance-charges-listener
 provider:
   name: aws
   runtime: dotnetcore3.1
-  memorySize: 4096
+  memorySize: 3008
   timeout: 900
   tracing:
     lambda: true
