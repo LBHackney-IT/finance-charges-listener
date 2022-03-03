@@ -235,7 +235,7 @@ namespace FinanceChargesListener.Gateway
 
             LoggingHandler.LogInfo("Scan completed");
 
-           // return finalResult;
+            // return finalResult;
 
             return finalResult.Select(i => i.GetChargeKeys()).ToList();
         }
