@@ -37,14 +37,6 @@ namespace FinanceChargesListener.Gateway
         {
             try
             {
-                //ScanRequest request = new ScanRequest("Assets")
-                //{
-                //    Limit = count,
-                //    ExclusiveStartKey = lastEvaluatedKey
-                //};
-                //ScanResponse response = await _dynamoDb.ScanAsync(request).ConfigureAwait(false);
-                //if (response == null || response.Items == null)
-                //    throw new Exception($"_dynamoDb.ScanAsync results NULL: {response?.ToString()}");
                 var scanRequest = new ScanRequest
                 {
                     TableName = "Assets",
