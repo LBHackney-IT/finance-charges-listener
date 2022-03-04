@@ -146,7 +146,7 @@ namespace FinanceChargesListener.UseCase
 
                         }
                     }
-                    // Charges Scan Step
+                    // Charges Scan Step 1
                     if (fileData.StepNumber == 1)
                     {
                         _logger.LogDebug($"Step {fileData.StepNumber}");
