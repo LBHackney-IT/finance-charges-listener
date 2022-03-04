@@ -53,7 +53,16 @@ resources:
         ManagedPolicyArns:
           - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
           - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
-        Policies:          
+        Policies:
+          - PolicyName: postToSns
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - "sns:Publish"
+                  Resource:
+                    - ${ssm:/sns-topic/${self:provider.stage}/charges/arn}
           - PolicyName: manageLogs
             PolicyDocument:
               Version: '2012-10-17'
