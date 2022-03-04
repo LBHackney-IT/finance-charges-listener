@@ -146,7 +146,7 @@ namespace FinanceChargesListener.UseCase
 
                         }
                     }
-                    // Charges Scan Step
+                    // Charges Scan Step 1
                     if (fileData.StepNumber == 1)
                     {
                         _logger.LogDebug($"Step {fileData.StepNumber}");
@@ -451,6 +451,7 @@ namespace FinanceChargesListener.UseCase
                 }
                 catch (Exception ex)
                 {
+                    _logger.LogError($"Failed to process the file, Exception : {ex.Message}");
                     await _awsS3FileService.UpdateFileTag(bucketName, fileData.RelativePath, Constants.FailedProcessingTagValue).ConfigureAwait(false);
                     throw new Exception($"Failed to process the file, Exception : {ex.Message}");
                 }
