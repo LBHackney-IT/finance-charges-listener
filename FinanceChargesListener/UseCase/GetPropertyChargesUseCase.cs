@@ -21,7 +21,7 @@ namespace FinanceChargesListener.UseCase
 
         public async Task<List<ChargeResponse>> ExecuteAsync(PropertyChargesMessageSqs queryParameters)
         {
-            var result = await _gateway.GetChargesAsync(queryParameters).ConfigureAwait(false);
+            var result = await _gateway.GetChargesByYearGroupSubGroup(queryParameters.ChargeYear,queryParameters.ChargeGroup,queryParameters.ChargeSubGroup).ConfigureAwait(false);
 
             return result.ToResponse();
         }
