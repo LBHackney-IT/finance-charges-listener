@@ -193,7 +193,9 @@ namespace FinanceChargesListener.UseCase
                                 }
                             }
                             _logger.LogDebug($"Charges Delete Completed for {chargeYear}  - {chargeSubGroup} ");
+                            _chargeKeysToDelete.Clear();
                         }
+                        
                         _logger.LogDebug($"No Charge Exits for {chargeYear}  - {chargeSubGroup} ");
                         await PushMessageToSns(fileData, 0).ConfigureAwait(false);
                         return;
@@ -213,12 +215,17 @@ namespace FinanceChargesListener.UseCase
                             _logger.LogDebug($"Starting fetching assets list from Housing Search API Asset Search Endpoint");
                             var assetsList = await GetAssetsList(AssetType.Dwelling.ToString()).ConfigureAwait(false);
                             var dwellingsListResult = assetsList.Item1;
+                            if (!_blockFullList.Any())
+                            {
+                                var blockList = await GetAssetsList(AssetType.Block.ToString()).ConfigureAwait(false);
+                                _blockFullList = blockList.Item1;
+                            }
 
-                            var blockList = await GetAssetsList(AssetType.Block.ToString()).ConfigureAwait(false);
-                            _blockFullList = blockList.Item1;
-
-                            var estateList = await GetAssetsList(AssetType.Estate.ToString()).ConfigureAwait(false);
-                            _estateFullList = estateList.Item1;
+                            if (!_estateFullList.Any())
+                            {
+                                var estateList = await GetAssetsList(AssetType.Estate.ToString()).ConfigureAwait(false);
+                                _estateFullList = estateList.Item1;
+                            }
 
                             _logger.LogDebug($"Assets List fetching completed and total assets fetched : {assetsList.Item1.Count}");
 
@@ -280,7 +287,12 @@ namespace FinanceChargesListener.UseCase
                                     await PushMessageToSns(fileData, index, false).ConfigureAwait(false);
                             }
                             else
+                            {
+                                _propertyCharges.Clear();
                                 await PushMessageToSns(fileData, 0).ConfigureAwait(false);
+                            }
+
+                           
                         }
                         return;
                     }
@@ -318,6 +330,7 @@ namespace FinanceChargesListener.UseCase
                         else
                         {
                             _logger.LogDebug($"Block Charges FULL Write Complete");
+                            _blockCharges.Clear();
                             await PushMessageToSns(fileData, 0).ConfigureAwait(false);
                         }
                         return;
