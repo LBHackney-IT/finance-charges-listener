@@ -195,7 +195,7 @@ namespace FinanceChargesListener.UseCase
                             _logger.LogDebug($"Charges Delete Completed for {chargeYear}  - {chargeSubGroup} ");
                             _chargeKeysToDelete.Clear();
                         }
-                        
+
                         _logger.LogDebug($"No Charge Exits for {chargeYear}  - {chargeSubGroup} ");
                         await PushMessageToSns(fileData, 0).ConfigureAwait(false);
                         return;
@@ -292,7 +292,7 @@ namespace FinanceChargesListener.UseCase
                                 await PushMessageToSns(fileData, 0).ConfigureAwait(false);
                             }
 
-                           
+
                         }
                         return;
                     }
