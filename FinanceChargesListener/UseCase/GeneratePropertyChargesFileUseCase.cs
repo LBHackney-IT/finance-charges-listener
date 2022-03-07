@@ -69,7 +69,7 @@ namespace FinanceChargesListener.UseCase
                     {
                         _logger.LogInformation($"Filtered Estimate File Name {file.FileName}");
 
-                        var stream = await _awsS3FileService.GetFile(bucketName,file.FileName).ConfigureAwait(false);
+                        var stream = await _awsS3FileService.GetFile(bucketName, file.FileName).ConfigureAwait(false);
 
                         fileResponse = ReadFile(stream, queryParameters.ChargeYear, queryParameters.ChargeSubGroup);
                     }
