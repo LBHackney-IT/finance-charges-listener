@@ -74,6 +74,8 @@ namespace FinanceChargesListener
             services.AddScoped<IProcessLeaseholdChargesUseCase, ProcessLeaseholdChargesUseCase>();
             services.AddScoped<IUpdateChargesUseCase, UpdateChargesUseCase>();
             services.AddScoped<ISnsGateway, SnsGateway>();
+            services.AddScoped<IGetPropertyChargesUseCase, GetPropertyChargesUseCase>();
+            services.AddScoped<IGeneratePropertyChargesFileUseCase, GeneratePropertyChargesFileUseCase>();
 
             services.AddAmazonS3(Configuration);
 
@@ -167,6 +169,10 @@ namespace FinanceChargesListener
 
                         case EventTypes.FileUploadEvent:
                             processor = ServiceProvider.GetService<IEstimateActualFileProcessUseCase>();
+                            break;
+
+                        case EventTypes.GeneratePropertyCharges:
+                            processor = ServiceProvider.GetService<IGeneratePropertyChargesFileUseCase>();
                             break;
 
                         default:

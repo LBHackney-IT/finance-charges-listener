@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using FinanceChargesListener.Boundary.Response;
 
 namespace FinanceChargesListener.Gateway.Services.Interfaces
 {
@@ -13,5 +14,7 @@ namespace FinanceChargesListener.Gateway.Services.Interfaces
         Task<Stream> GetFile(string bucketName, string key);
         Task<bool> DeleteFile(string bucketName, string key);
         Task<bool> UpdateFileTag(string bucketName, string key, string tagValue);
+        Task<List<FileProcessingLogResponse>> GetProcessedFiles();
+        Task<FileLocationResponse> UploadPrintRoomFile(IFormFile formFile, string fileName);
     }
 }

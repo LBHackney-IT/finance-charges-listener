@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using FinanceChargesListener.Boundary;
 using FinanceChargesListener.Gateway.Common;
 
 namespace FinanceChargesListener.Gateway
@@ -268,6 +269,76 @@ namespace FinanceChargesListener.Gateway
                 var filteredList = scannedResult?.Where(x => x.ChargeYear == chargeYear
                                                              && x.ChargeGroup == chargeGroup
                                                              && x.ChargeSubGroup == chargeSubGroup);
+
+                resultList.AddRange(filteredList);
+                LoggingHandler.LogInfo($"*** Completed Filtered Count:  {resultList.Count} ");
+                Thread.Sleep(2000);
+            } while (lastEvaluatedKey.Count != 0);
+
+            LoggingHandler.LogInfo($"*** Completed Scan Segment {segment} of {Constants.ChargeTableName}. TotalScanRequestCount: {totalScanRequestCount}, TotalScannedItemCount: {totalScannedItemCount} ***");
+            return resultList;
+        }
+
+        public async Task<IList<Charge>> GetChargesAsync(PropertyChargesMessageSqs queryParameters)
+        {
+            int totalSegments = 5;
+            var finalResult = new List<Charge>();
+            LoggingHandler.LogInfo($"*** Creating {totalSegments} Parallel Scan Tasks to scan {Constants.ChargeTableName}");
+            Task[] tasks = new Task[totalSegments];
+            for (int segment = 0; segment < totalSegments; segment++)
+            {
+                int tmpSegment = segment;
+                Task task = await Task.Factory.StartNew(async () =>
+                {
+                    var scanSegmentResult = await ScanSegment(totalSegments, tmpSegment, queryParameters).ConfigureAwait(false);
+
+                    finalResult.AddRange(scanSegmentResult);
+                }).ConfigureAwait(false);
+
+                tasks[segment] = task;
+            }
+
+            LoggingHandler.LogInfo("All scan tasks are created, waiting for them to complete.");
+            Task.WaitAll(tasks);
+
+            LoggingHandler.LogInfo("All scan tasks are completed.");
+            LoggingHandler.LogInfo($"*** Completed Count:  {finalResult.Count} ");
+
+
+            LoggingHandler.LogInfo("Scan completed");
+
+            return finalResult;
+        }
+
+        private async Task<List<Charge>> ScanSegment(int totalSegments, int segment, PropertyChargesMessageSqs queryParameters)
+        {
+            var resultList = new List<Charge>();
+
+            LoggingHandler.LogInfo($"*** Starting to Scan Segment {segment} of {Constants.ChargeTableName} out of {totalSegments} total segments ***");
+            Dictionary<string, AttributeValue> lastEvaluatedKey = null;
+            int totalScannedItemCount = 0;
+            int totalScanRequestCount = 0;
+            do
+            {
+                var request = new ScanRequest
+                {
+                    TableName = Constants.ChargeTableName,
+                    Limit = 1200,
+                    ExclusiveStartKey = lastEvaluatedKey,
+                    Segment = segment,
+                    TotalSegments = totalSegments
+                };
+
+                var response = await _amazonDynamoDb.ScanAsync(request).ConfigureAwait(false);
+                lastEvaluatedKey = response.LastEvaluatedKey;
+                totalScanRequestCount++;
+                totalScannedItemCount += response.ScannedCount;
+
+                var scannedResult = response.ToChargeDomain();
+                LoggingHandler.LogInfo($"*** Completed Scan Count : {scannedResult.Count} ");
+                var filteredList = scannedResult?.Where(x => x.ChargeYear == queryParameters.ChargeYear
+                                                             && x.ChargeGroup == queryParameters.ChargeGroup
+                                                             && x.ChargeSubGroup == queryParameters.ChargeSubGroup);
 
                 resultList.AddRange(filteredList);
                 LoggingHandler.LogInfo($"*** Completed Filtered Count:  {resultList.Count} ");
