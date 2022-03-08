@@ -30,6 +30,8 @@ functions:
       ASSET_INFORMATION_API_TOKEN: ${ssm:/housing-finance/${self:provider.stage}/asset-information-api-finance-token}
       CHARGES_BUCKET_NAME: ${ssm:/housing-finance/${self:provider.stage}/charges-api-s3-bucket-name}
       CHARGES_SNS_ARN: ${ssm:/sns-topic/${self:provider.stage}/charges/arn}
+      PRINT_ROOM_BUCKET_NAME: ${ssm:/housing-finance/${self:provider.stage}/print-room-s3-bucket-name}
+      PRINT_RENT_STATEMENTS_HEADER: ${ssm:/housing-finance/${self:provider.stage}/print-rent-statements-header}
     events:
       ### Specify the parameter containing the queue arn used to trigget the lambda function here
       ### This will have been defined in the terraform configuration

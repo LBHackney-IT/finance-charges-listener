@@ -7,5 +7,6 @@ namespace FinanceChargesListener
         public const string EstimateActualFileUploadedEvent = "EstimateActualFileUploadedEvent";
         public const string FileUploadEvent = "FileUploadEvent";
         public const string DwellingChargeUpdatedEvent = "DwellingChargeUpdatedEvent";
+        public const string GeneratePropertyCharges = "GeneratePropertyCharges";
     }
 }

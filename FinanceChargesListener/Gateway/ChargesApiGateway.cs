@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using FinanceChargesListener.Boundary;
 using FinanceChargesListener.Gateway.Common;
 
 namespace FinanceChargesListener.Gateway
@@ -207,7 +208,7 @@ namespace FinanceChargesListener.Gateway
             LoggingHandler.LogInfo("*** Deleting Charges Completed");
         }
 
-        public async Task<List<ChargeKeys>> GetChargesByYearGroupSubGroup(short chargeYear, ChargeGroup chargeGroup, ChargeSubGroup? chargeSubGroup)
+        public async Task<List<Charge>> GetChargesByYearGroupSubGroup(short chargeYear, ChargeGroup chargeGroup, ChargeSubGroup? chargeSubGroup)
         {
             int totalSegments = 5;
             var finalResult = new List<Charge>();
@@ -237,7 +238,7 @@ namespace FinanceChargesListener.Gateway
 
             // return finalResult;
 
-            return finalResult.Select(i => i.GetChargeKeys()).ToList();
+            return finalResult;
         }
         private async Task<List<Charge>> ScanSegment(int totalSegments, int segment, short chargeYear, ChargeGroup chargeGroup, ChargeSubGroup? chargeSubGroup)
         {
