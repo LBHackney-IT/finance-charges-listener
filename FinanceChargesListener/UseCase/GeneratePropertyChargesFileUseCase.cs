@@ -40,12 +40,17 @@ namespace FinanceChargesListener.UseCase
             var queryParameters = JsonSerializer.Deserialize<PropertyChargesMessageSqs>(message?.EventData?.NewData?.ToString()
                                                                                ?? string.Empty, jsonSerializerOptions);
 
-            var propertyCharges = await _getPropertyChargesUseCase.ExecuteAsync(queryParameters).ConfigureAwait(false);
+            var charges = await _getPropertyChargesUseCase.ExecuteAsync(queryParameters).ConfigureAwait(false);
 
-            _logger.LogInformation($"Property charge count: {propertyCharges.Count}");
-
-            if (propertyCharges is null)
+            if (charges is null)
                 throw new Exception("charges not found");
+
+            var propertyCharges = charges.Where(x => x.TargetType == TargetType.Dwelling);
+
+            if (!propertyCharges.Any())
+                throw new Exception("charges for dwelling not found");
+
+            _logger.LogInformation($"Property charge count: {propertyCharges.Count()}");
 
             // Retrieve assets list from housing search API
             var assetsList = await GetAssetsList(AssetType.Dwelling.ToString()).ConfigureAwait(false);
