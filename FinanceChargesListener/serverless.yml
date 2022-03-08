@@ -120,6 +120,26 @@ resources:
                     - "arn:aws:s3:::${self:custom.s3.${opt:stage}}"
                     - "arn:aws:s3:::${self:custom.s3.${opt:stage}}/*"
                     - "arn:aws:s3:::${self:custom.s3.${opt:stage}}/"
+          - PolicyName: print-room-bucket-access
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - s3:PutObject
+                    - s3:GetObject
+                    - s3:ListBucket
+                    - s3:DeleteObject
+                    - s3:PutBucketTagging
+                    - s3:GetObjectTagging
+                    - s3:GetObjectVersionTagging
+                    - s3:PutObjectTagging
+                    - s3:PutObjectTaggingAsync
+                    - s3:PutObjectVersionTagging
+                  Resource:
+                    - "arn:aws:s3:::${self:custom.s3-print-room.${opt:stage}}"
+                    - "arn:aws:s3:::${self:custom.s3-print-room.${opt:stage}}/*"
+                    - "arn:aws:s3:::${self:custom.s3-print-room.${opt:stage}}/"
           - PolicyName: dynamoDBAccess
             PolicyDocument:
               Version: '2012-10-17'
@@ -201,6 +221,10 @@ custom:
     development: lbh-charges-api-bucket-development
     staging: lbh-charges-api-bucket-staging
     production: lbh-charges-api-bucket-production
+  s3-print-room:
+    development: mtfh-finance-printroom-development
+    staging: mtfh-finance-printroom-staging
+    production: mtfh-finance-printroom-production
   vpc:
     development:
       subnetIds:
