@@ -3,6 +3,7 @@ using FinanceChargesListener.Domain;
 using FinanceChargesListener.Infrastructure.Entities;
 using System.Collections.Generic;
 using System.Linq;
+using FinanceChargesListener.Boundary.Response;
 
 namespace FinanceChargesListener.Factories
 {
@@ -106,6 +107,25 @@ namespace FinanceChargesListener.Factories
                     {"created_by", new AttributeValue {S = charge.CreatedBy}},
                     {"created_at", new AttributeValue {S = charge.CreatedAt.ToString("F")}}
                 };
+        }
+
+        public static List<ChargeResponse> ToResponse(this IEnumerable<Charge> domainList)
+        {
+            return domainList.Select(domain => domain.ToResponse()).ToList();
+        }
+
+        public static ChargeResponse ToResponse(this Charge domain)
+        {
+            return new ChargeResponse()
+            {
+                Id = domain.Id,
+                TargetId = domain.TargetId,
+                DetailedCharges = domain.DetailedCharges,
+                TargetType = domain.TargetType,
+                ChargeGroup = domain.ChargeGroup,
+                ChargeSubGroup = domain.ChargeSubGroup,
+                ChargeYear = domain.ChargeYear
+            };
         }
     }
 }

@@ -30,6 +30,8 @@ functions:
       ASSET_INFORMATION_API_TOKEN: ${ssm:/housing-finance/${self:provider.stage}/asset-information-api-finance-token}
       CHARGES_BUCKET_NAME: ${ssm:/housing-finance/${self:provider.stage}/charges-api-s3-bucket-name}
       CHARGES_SNS_ARN: ${ssm:/sns-topic/${self:provider.stage}/charges/arn}
+      PRINT_ROOM_BUCKET_NAME: ${ssm:/housing-finance/${self:provider.stage}/print-room-s3-bucket-name}
+      PRINT_RENT_STATEMENTS_HEADER: ${ssm:/housing-finance/${self:provider.stage}/print-rent-statements-header}
     events:
       ### Specify the parameter containing the queue arn used to trigget the lambda function here
       ### This will have been defined in the terraform configuration
@@ -118,6 +120,26 @@ resources:
                     - "arn:aws:s3:::${self:custom.s3.${opt:stage}}"
                     - "arn:aws:s3:::${self:custom.s3.${opt:stage}}/*"
                     - "arn:aws:s3:::${self:custom.s3.${opt:stage}}/"
+          - PolicyName: print-room-bucket-access
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - s3:PutObject
+                    - s3:GetObject
+                    - s3:ListBucket
+                    - s3:DeleteObject
+                    - s3:PutBucketTagging
+                    - s3:GetObjectTagging
+                    - s3:GetObjectVersionTagging
+                    - s3:PutObjectTagging
+                    - s3:PutObjectTaggingAsync
+                    - s3:PutObjectVersionTagging
+                  Resource:
+                    - "arn:aws:s3:::${self:custom.s3-print-room.${opt:stage}}"
+                    - "arn:aws:s3:::${self:custom.s3-print-room.${opt:stage}}/*"
+                    - "arn:aws:s3:::${self:custom.s3-print-room.${opt:stage}}/"
           - PolicyName: dynamoDBAccess
             PolicyDocument:
               Version: '2012-10-17'
@@ -199,6 +221,10 @@ custom:
     development: lbh-charges-api-bucket-development
     staging: lbh-charges-api-bucket-staging
     production: lbh-charges-api-bucket-production
+  s3-print-room:
+    development: mtfh-finance-printroom-development
+    staging: mtfh-finance-printroom-staging
+    production: mtfh-finance-printroom-production
   vpc:
     development:
       subnetIds:

@@ -2,6 +2,7 @@ using FinanceChargesListener.Domain;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using FinanceChargesListener.Boundary;
 
 namespace FinanceChargesListener.Gateway.Interfaces
 {
@@ -14,6 +15,6 @@ namespace FinanceChargesListener.Gateway.Interfaces
         Task<bool> SaveBatchAsync(List<Charge> charges);
         Task<Charge> GetById(Guid chargeId, Guid assetId);
         Task DeleteBatchAsync(List<ChargeKeys> chargeIds, int batchCapacity);
-        Task<List<ChargeKeys>> GetChargesByYearGroupSubGroup(short chargeYear, ChargeGroup chargeGroup, ChargeSubGroup? chargeSubGroup);
+        Task<List<Charge>> GetChargesByYearGroupSubGroup(short chargeYear, ChargeGroup chargeGroup, ChargeSubGroup? chargeSubGroup);
     }
 }

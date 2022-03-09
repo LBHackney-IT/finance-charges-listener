@@ -16,6 +16,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using FinanceChargesListener.Infrastructure;
 
 namespace FinanceChargesListener.UseCase
 {
@@ -152,8 +153,10 @@ namespace FinanceChargesListener.UseCase
                         _logger.LogDebug($"Step {fileData.StepNumber}");
 
                         var chargeSubGroupVal = Enum.Parse<ChargeSubGroup>(chargeSubGroup);
-                        _chargeKeysToDelete = await _chargesApiGateway.GetChargesByYearGroupSubGroup(chargeYear,
+                        var charges = await _chargesApiGateway.GetChargesByYearGroupSubGroup(chargeYear,
                             ChargeGroup.Leaseholders, chargeSubGroupVal).ConfigureAwait(false);
+
+                        _chargeKeysToDelete = charges.Select(i => i.GetChargeKeys()).ToList();
 
                         _logger.LogDebug($"Property Charge Exists for {chargeYear} {chargeSubGroup}");
                         _logger.LogDebug($"Property Charges Count : {_chargeKeysToDelete.Count}");
