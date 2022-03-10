@@ -115,8 +115,6 @@ namespace FinanceChargesListener.UseCase
                     $"{tenureData.PaymentReferenceNumber}," +
                     $"{tenureData.PropertyReferenceNumber}," +
                     $"{propertyCharge.ChargeGroup}," +
-                    $"{propertyCharge.ChargeYear}," +
-                    $"{propertyCharge.ChargeSubGroup}," +
                     $"{tenureData?.Name1}," +
                     $"{tenureData?.PropertyAddress}," +
                     $"{tenureData?.AddressLine1}," +
@@ -149,7 +147,7 @@ namespace FinanceChargesListener.UseCase
 
             var csvFileStream = new MemoryStream(Encoding.UTF8.GetBytes(builder.ToString()));
 
-            var fileName = $"Charges{DateTime.Now:yyyyMMddHHmmssfff}.csv";
+            var fileName = $"Property Charges{DateTime.Now:yyyyMMddHHmmssfff}.csv";
             var formFile = new FormFile(csvFileStream, 0, csvFileStream.Length, "chargesFile", fileName);
 
             await _awsS3FileService.UploadPrintRoomFile(formFile, formFile.FileName).ConfigureAwait(false);
@@ -227,15 +225,15 @@ namespace FinanceChargesListener.UseCase
                             {
                                 estimatesActual.Add(new EstimateActualCharge
                                 {
-                                    PaymentReferenceNumber = reader.GetValue(0).ToString(),
-                                    PropertyReferenceNumber = reader.GetValue(1).ToString(),
-                                    PropertyAddress = reader.GetValue(2).ToString(),
-                                    TenureType = reader.GetValue(3).ToString(),
-                                    Name1 = reader.GetValue(8).ToString(),
-                                    AddressLine1 = reader.GetValue(9).ToString(),
-                                    AddressLine2 = reader.GetValue(10).ToString(),
-                                    AddressLine3 = reader.GetValue(11).ToString(),
-                                    AddressLine4 = reader.GetValue(12).ToString(),
+                                    PaymentReferenceNumber = reader.GetValue(0)?.ToString(),
+                                    PropertyReferenceNumber = reader.GetValue(1)?.ToString(),
+                                    PropertyAddress = reader.GetValue(2)?.ToString(),
+                                    TenureType = reader.GetValue(3)?.ToString(),
+                                    Name1 = reader.GetValue(8)?.ToString(),
+                                    AddressLine1 = reader.GetValue(9)?.ToString(),
+                                    AddressLine2 = reader.GetValue(10)?.ToString(),
+                                    AddressLine3 = reader.GetValue(11)?.ToString(),
+                                    AddressLine4 = reader.GetValue(12)?.ToString(),
                                     TotalCharge = FileReaderHelper.GetChargeAmount(reader.GetValue(18)),
                                     BlockCCTVMaintenanceAndMonitoring =
                                         FileReaderHelper.GetChargeAmount(reader.GetValue(19)),
