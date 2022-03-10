@@ -96,13 +96,18 @@ namespace FinanceChargesListener.UseCase
             {
                 var assetId = dwellingsListResult.FirstOrDefault(x => x.Id == propertyCharge.TargetId)?.AssetId;
 
-                _logger.LogInformation($"Asset Id: {assetId}");
-
-                // TODO FK: Due to assets information is not synced with production, assign default assetId to bypass it on dev and staging. Will be removed after test.
-                if (assetId == null) assetId = fileResponse.FirstOrDefault()?.PropertyReferenceNumber;
-
                 var estimateActualCharge = fileResponse.FirstOrDefault(x =>
                     x.PropertyReferenceNumber == assetId);
+
+                // TODO FK: Due to assets information is not synced with production, assign default assetId to bypass it on dev and staging. Will be removed after test.
+                if (estimateActualCharge == null)
+                {
+                    _logger.LogInformation($"Asset Id: {assetId}");
+                    assetId = fileResponse.FirstOrDefault()?.PropertyReferenceNumber;
+
+                    estimateActualCharge = fileResponse.FirstOrDefault(x =>
+                        x.PropertyReferenceNumber == assetId);
+                }
 
                 if (estimateActualCharge == null)
                     throw new Exception("Cannot locate the asset on estimate file");
