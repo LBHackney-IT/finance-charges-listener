@@ -138,7 +138,7 @@ namespace FinanceChargesListener.UseCase
                                     }
                                     catch (Exception e)
                                     {
-                                        _logger.LogDebug($"Exception occurred while reading the Estimates Excel Sheet: {e.Message}");
+                                        _logger.LogDebug($"Exception occurred while reading the Excel Sheet: {e.Message}");
                                         throw new Exception(e.Message);
                                     }
                                 }
@@ -203,7 +203,7 @@ namespace FinanceChargesListener.UseCase
                         await PushMessageToSns(fileData, 0).ConfigureAwait(false);
                         return;
                     }
-                    // Read Excel ,
+
                     // Get All Dwelling Asset,
                     // Transform Asset Id,
                     // Form Property Charges 
@@ -214,7 +214,7 @@ namespace FinanceChargesListener.UseCase
                         {
                             var estimatesActual = excelData;
 
-                            // Load Assets, Blocks , EStates 
+                            // Load Assets, Blocks , EStates from Elastic Search
                             _logger.LogDebug($"Starting fetching assets list from Housing Search API Asset Search Endpoint");
                             var assetsList = await GetAssetsList(AssetType.Dwelling.ToString()).ConfigureAwait(false);
                             var dwellingsListResult = assetsList.Item1;
@@ -237,7 +237,7 @@ namespace FinanceChargesListener.UseCase
                             estimatesActual.ForEach(item =>
                             {
                                 var data = dwellingsListResult.FirstOrDefault(x => x.AssetId == item.PropertyReferenceNumber);
-                                // TBC
+                                // Dev and Stage NewBuild Handling
                                 if (data == null)
                                 {
                                     _logger.LogDebug($"Could not find associated Guid Asset Id for UH Asset Id : {item.PropertyReferenceNumber}");
@@ -250,7 +250,7 @@ namespace FinanceChargesListener.UseCase
 
                             // Property Charges
                             _logger.LogDebug($"Starting Charges formation Process");
-                            //var propertyCharges = new List<Charge>();
+
                             var createdBy = Constants.ChargesListenerUserName;
                             foreach (var item in estimatesActual)
                             {
@@ -262,11 +262,6 @@ namespace FinanceChargesListener.UseCase
                         return;
                     }
 
-                    // Get Excel Data
-                    // Group by Block Id and Estate Id
-                    // Create Block Charges List
-                    // Create Estate Charges List
-                    // Create Hackney Total Charge
                     // Write All Property Charges
                     if (fileData.StepNumber == 4)
                     {
@@ -301,8 +296,6 @@ namespace FinanceChargesListener.UseCase
                     }
 
                     // Write All Block Charges
-                    // Write All Estate Charges
-                    // Write Hackney Total Charge
                     if (fileData.StepNumber == 5)
                     {
                         _logger.LogDebug($"Step {fileData.StepNumber}");
@@ -310,8 +303,13 @@ namespace FinanceChargesListener.UseCase
                         var blockGroup = excelData.GroupBy(x => x.BlockId).ToList();
                         if (!_blockCharges.Any())
                         {
+                            if (!_blockFullList.Any())
+                            {
+                                var blockList = await GetAssetsList(AssetType.Block.ToString()).ConfigureAwait(false);
+                                _blockFullList = blockList.Item1;
+                            }
                             _blockCharges = await GetSummarisedChargesList(blockGroup, _blockFullList, AssetType.Block.ToString(),
-                                ChargeGroup.Leaseholders, chargeSubGroup, Constants.ChargesListenerUserName, chargeYear);
+                                chargeSubGroup, Constants.ChargesListenerUserName, chargeYear);
                             _logger.LogDebug($"Block Charges formation Process completed with total record count as : {_blockCharges.Count()}");
                         }
 
@@ -338,7 +336,8 @@ namespace FinanceChargesListener.UseCase
                         }
                         return;
                     }
-
+                    // Write All Estate Charges
+                    // Write Hackney Total Charge
                     if (fileData.StepNumber == 6)
                     {
                         _logger.LogDebug($"Step {fileData.StepNumber}");
@@ -346,15 +345,21 @@ namespace FinanceChargesListener.UseCase
                         // Estate, Block and Hackney Totals 
                         var estateGroup = excelData.GroupBy(x => x.EstateId).ToList();
 
+                        if (!_estateFullList.Any())
+                        {
+                            var estateList = await GetAssetsList(AssetType.Estate.ToString()).ConfigureAwait(false);
+                            _estateFullList = estateList.Item1;
+                        }
+
                         var estateCharges = await GetSummarisedChargesList(estateGroup, _estateFullList, AssetType.Estate.ToString(),
-                           ChargeGroup.Leaseholders, chargeSubGroup, Constants.ChargesListenerUserName, chargeYear);
+                          chargeSubGroup, Constants.ChargesListenerUserName, chargeYear);
                         _logger.LogDebug($"Estate Charges formation Process completed with total record count as : {estateCharges.Count()}");
 
                         var hackneyTotalCharge = GetHackneyTotal(excelData, AssetType.NA.ToString(),
                            ChargeGroup.Leaseholders, chargeSubGroup, Constants.ChargesListenerUserName, chargeYear);
-                        _logger.LogDebug($"Hackney Total Charges formation Process completed");
+                        _logger.LogDebug("Hackney Total Charges formation Process completed");
 
-                        _logger.LogDebug($"Estate, Hackney Charges Write Starting");
+                        _logger.LogDebug("Estate, Hackney Charges Write Starting");
 
 
                         var writeResult = await WriteChargeItems(estateCharges).ConfigureAwait(false);
@@ -367,7 +372,6 @@ namespace FinanceChargesListener.UseCase
                         return;
                     }
 
-                    // Get Excel Data
                     // Group By Block Id
                     // Get Block Summaries list
                     // Write Block Summaries List
@@ -378,6 +382,12 @@ namespace FinanceChargesListener.UseCase
                         {
                             // Estate, Block and Hackney Totals 
                             var blockGroup = excelData.GroupBy(x => x.BlockId).ToList();
+
+                            if (!_blockFullList.Any())
+                            {
+                                var blockList = await GetAssetsList(AssetType.Block.ToString()).ConfigureAwait(false);
+                                _blockFullList = blockList.Item1;
+                            }
                             // Financial Summary Load
                             // Block Summary Load
                             var blockSummaries = GetAssetSummariesByType(blockGroup, _blockFullList, excelData, TargetType.Block, chargeYear, chargeSubGroup);
@@ -395,6 +405,7 @@ namespace FinanceChargesListener.UseCase
                             }
                             else
                             {
+                                _blockFullList.Clear();
                                 _logger.LogDebug($"Block Summaries FULL Write Complete");
                                 await PushMessageToSns(fileData, 0).ConfigureAwait(false);
                             }
@@ -402,11 +413,10 @@ namespace FinanceChargesListener.UseCase
                         return;
                     }
 
-                    // Get Excel Data
                     // Group By Estate Id
                     // Get Estate Summaries list
                     // Write Estate Summaries List
-                    // Write Hackney Total Sumamry
+                    // Write Hackney Total Summary
                     // Update File Tag to Processed
                     if (fileData.StepNumber == 8)
                     {
@@ -419,12 +429,15 @@ namespace FinanceChargesListener.UseCase
                             // Estate Summary Load
                             _logger.LogDebug($"Estate full list count {_estateFullList.Count}");
 
-                            var estateList = await GetAssetsList(AssetType.Estate.ToString()).ConfigureAwait(false);
-                            _estateFullList = estateList.Item1;
+                            if (!_estateFullList.Any())
+                            {
+                                var estateList = await GetAssetsList(AssetType.Estate.ToString()).ConfigureAwait(false);
+                                _estateFullList = estateList.Item1;
+                            }
 
-                            var estateSumaries = GetAssetSummariesByType(estateGroup, _estateFullList, excelData, TargetType.Estate, chargeYear, chargeSubGroup);
+                            var estateSummaries = GetAssetSummariesByType(estateGroup, _estateFullList, excelData, TargetType.Estate, chargeYear, chargeSubGroup);
 
-                            var data = estateSumaries.OrderBy(x => x.TargetId).Skip(fileData.WriteIndex * 100).Take(100).ToList();
+                            var data = estateSummaries.OrderBy(x => x.TargetId).Skip(fileData.WriteIndex * 100).Take(100).ToList();
                             if (data != null && data.Any())
                             {
                                 var estateSummaryLoadResult = await _financialSummaryService.AddEstimateActualSummaryBatch(data.ToList()).ConfigureAwait(false);
@@ -435,10 +448,14 @@ namespace FinanceChargesListener.UseCase
                             }
                             else
                             {
+                                _estateFullList.Clear();
                                 // Hackney Total Summary Load
                                 var freeholdersCount = Helper.GetFreeholdersCount(excelData);
                                 var leaseholdersCount = Helper.GetLeaseholdersCount(excelData);
-                                var totalEstimateCharge = Convert.ToInt32(excelData.Sum(x => x.TotalCharge));
+                                var hackneyTotalCharge = GetHackneyTotal(excelData, AssetType.NA.ToString(),
+                                    ChargeGroup.Leaseholders, chargeSubGroup, Constants.ChargesListenerUserName, chargeYear);
+
+                                var totalServiceCharge = Convert.ToInt32(hackneyTotalCharge.DetailedCharges.Sum(x => x.Amount));
 
                                 var addSummaryRequest = new AddAssetSummaryRequest
                                 {
@@ -447,19 +464,20 @@ namespace FinanceChargesListener.UseCase
                                     AssetName = Constants.RootAsset,
                                     SummaryYear = chargeYear,
                                     TargetType = TargetType.NA,
-                                    TotalServiceCharges = totalEstimateCharge,
+                                    TotalServiceCharges = totalServiceCharge,
                                     TotalDwellings = excelData.Count(),
                                     TotalFreeholders = freeholdersCount,
                                     TotalLeaseholders = leaseholdersCount,
                                     ValuesType = Enum.Parse<ValuesType>(chargeSubGroup)
                                 };
-                                var loadSummaryResult = await _financialSummaryService.AddEstimateSummary(addSummaryRequest).ConfigureAwait(false);
-                                _logger.LogDebug($"Charges Summaries loading Process completed with total record count loaded : {excelData.Count}");
+                                var loadSummaryResult = await _financialSummaryService.AddHeadOfChargesSummary(addSummaryRequest).ConfigureAwait(false);
+                                if (loadSummaryResult)
+                                    _logger.LogDebug($"Charges Summaries loading Process completed with total record count loaded : {excelData.Count}");
 
                                 // Update File tag status
                                 var updateTagResponse = await _awsS3FileService.UpdateFileTag(bucketName, fileData.RelativePath, Constants.SuccessfulProcessingTagValue).ConfigureAwait(false);
                                 if (updateTagResponse)
-                                    _logger.LogDebug($"{chargeSubGroup} file processed successfully");
+                                    _logger.LogDebug($"{chargeYear} - {chargeSubGroup} file processed successfully");
                             }
                             return;
                         }
@@ -552,8 +570,7 @@ namespace FinanceChargesListener.UseCase
         }
 
         private async Task<List<Charge>> GetSummarisedChargesList(List<IGrouping<string, EstimateActualCharge>> assetsGroup,
-           List<Asset> assetListResult, string assetType, ChargeGroup chargeGroup, string chargeSubGroup,
-           string createdBy, short chargeYear)
+           List<Asset> assetListResult, string assetType, string chargeSubGroup, string createdBy, short chargeYear)
         {
             var chargesResultList = new List<Charge>();
             foreach (var item in assetsGroup)
@@ -561,10 +578,10 @@ namespace FinanceChargesListener.UseCase
                 if (!string.IsNullOrEmpty(item.Key))
                 {
                     var groupAsset = assetListResult.FirstOrDefault(x => x.AssetId == item.Key);
-                    var id = Guid.NewGuid();
+                    var assetId = Guid.NewGuid();
                     if (groupAsset != null)
                     {
-                        id = groupAsset.Id;
+                        assetId = groupAsset.Id;
                     }
                     else
                     {
@@ -578,12 +595,12 @@ namespace FinanceChargesListener.UseCase
                         // Call ASSET Information API
                         var assetDetails = await _assetInformationApiGateway.GetAssetByAssetIdAsync(numericalAssetId).ConfigureAwait(false);
                         if (assetDetails != null)
-                            id = assetDetails.Id;
+                            assetId = assetDetails.Id;
                     }
 
                     var groupItem = new EstimateActualCharge
                     {
-                        AssetId = id,
+                        AssetId = assetId,
                         BlockCCTVMaintenanceAndMonitoring = item.Sum(x => x.BlockCCTVMaintenanceAndMonitoring),
                         BlockCleaning = item.Sum(x => x.BlockCleaning),
                         BlockElectricity = item.Sum(x => x.BlockElectricity),
