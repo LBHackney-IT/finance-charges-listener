@@ -102,6 +102,7 @@ namespace FinanceChargesListener.UseCase
                 // TODO FK: Due to assets information is not synced with production, assign default assetId to bypass it on dev and staging. Will be removed after test.
                 if (estimateActualCharge == null)
                 {
+                    _logger.LogInformation($"Target Id: {propertyCharge.TargetId}");
                     _logger.LogInformation($"Asset Id: {assetId}");
                     assetId = fileResponse.FirstOrDefault()?.PropertyReferenceNumber;
 
