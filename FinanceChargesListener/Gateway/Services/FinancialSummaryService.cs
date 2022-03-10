@@ -22,7 +22,7 @@ namespace FinanceChargesListener.Gateway.Services
             _contextAccessor = httpContextAccessor;
         }
 
-        public async Task<bool> AddEstimateSummary(AddAssetSummaryRequest addAssetSummaryRequest)
+        public async Task<bool> AddHeadOfChargesSummary(AddAssetSummaryRequest addAssetSummaryRequest)
         {
             var response = await _client.PostAsJsonAsyncType(new Uri("api/v1/asset-summary", UriKind.Relative), addAssetSummaryRequest)
                 .ConfigureAwait(true);

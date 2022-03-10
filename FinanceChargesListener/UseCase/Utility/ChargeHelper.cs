@@ -54,8 +54,7 @@ namespace FinanceChargesListener.UseCase.Utility
         }
 
         public static Charge GetChargeModel(string assetType, ChargeGroup chargeGroup, string chargeSubGroup,
-            string createdBy,
-            short chargeYear, EstimateActualCharge estimateOrActualCharge)
+            string createdBy, short chargeYear, EstimateActualCharge estimateOrActualCharge)
         {
             var detailedChargesList = new List<DetailedCharges>();
             var chargeType = GetChargeType(Constants.BlockCCTVMaintenanceAndMonitoring);
