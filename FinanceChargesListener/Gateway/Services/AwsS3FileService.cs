@@ -158,8 +158,8 @@ namespace FinanceChargesListener.Gateway.Services
 
         public async Task<FileLocationResponse> UploadPrintRoomFile(IFormFile formFile, string fileName)
         {
-            var location = $"uploads/{fileName}";
-            var bucketName = Environment.GetEnvironmentVariable("PRINT_ROOM_BUCKET_NAME");
+            var location = $"printoutput/{fileName}";
+            var bucketName = Environment.GetEnvironmentVariable("CHARGES_BUCKET_NAME");
 
             using (var stream = formFile.OpenReadStream())
             {
