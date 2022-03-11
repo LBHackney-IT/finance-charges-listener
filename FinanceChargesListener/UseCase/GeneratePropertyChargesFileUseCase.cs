@@ -116,6 +116,11 @@ namespace FinanceChargesListener.UseCase
                 // Update the charges value 
                 var tenureData = UpdateEstimateActualCharge(estimateActualCharge, propertyCharge.DetailedCharges);
 
+                var propertyTotal = propertyCharge.DetailedCharges.Where(x => x.ChargeType == ChargeType.Property).Sum(x => x.Amount);
+                var estateTotal = propertyCharge.DetailedCharges.Where(x => x.ChargeType == ChargeType.Estate).Sum(x => x.Amount);
+                var blockTotal = propertyCharge.DetailedCharges.Where(x => x.ChargeType == ChargeType.Block).Sum(x => x.Amount);
+                var totalCharge = propertyCharge.DetailedCharges.Sum(x => x.Amount);
+
                 builder.AppendLine(
                     $"{propertyCharge.Id}," +
                     $"{tenureData.PaymentReferenceNumber}," +
@@ -127,7 +132,10 @@ namespace FinanceChargesListener.UseCase
                     $"{tenureData?.AddressLine2}," +
                     $"{tenureData?.AddressLine3}," +
                     $"{tenureData?.AddressLine4}," +
-                    $"{tenureData?.TotalCharge}," +
+                    $"{propertyTotal:N}," +
+                    $"{blockTotal:N}," +
+                    $"{estateTotal:N}," +
+                    $"{totalCharge:N}," +
                     $"{tenureData?.BlockCCTVMaintenanceAndMonitoring}," +
                     $"{tenureData?.BlockCleaning}," +
                     $"{tenureData?.BlockElectricity}," +
@@ -312,7 +320,7 @@ namespace FinanceChargesListener.UseCase
             if (charge == null)
                 return 0;
 
-            return charge.Amount;
+            return Convert.ToDecimal(charge.Amount.ToString("N"));
         }
     }
 }
