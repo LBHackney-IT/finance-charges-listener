@@ -132,10 +132,10 @@ namespace FinanceChargesListener.UseCase
                     $"{tenureData?.AddressLine2}," +
                     $"{tenureData?.AddressLine3}," +
                     $"{tenureData?.AddressLine4}," +
-                    $"{propertyTotal:N}," +
-                    $"{blockTotal:N}," +
-                    $"{estateTotal:N}," +
-                    $"{totalCharge:N}," +
+                    $"{propertyTotal}," +
+                    $"{blockTotal}," +
+                    $"{estateTotal}," +
+                    $"{totalCharge}," +
                     $"{tenureData?.BlockCCTVMaintenanceAndMonitoring}," +
                     $"{tenureData?.BlockCleaning}," +
                     $"{tenureData?.BlockElectricity}," +
@@ -320,7 +320,7 @@ namespace FinanceChargesListener.UseCase
             if (charge == null)
                 return 0;
 
-            return Convert.ToDecimal(charge.Amount.ToString("N"));
+            return charge.Amount;
         }
     }
 }
