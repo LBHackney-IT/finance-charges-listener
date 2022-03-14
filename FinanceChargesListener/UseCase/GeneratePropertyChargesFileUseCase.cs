@@ -96,19 +96,30 @@ namespace FinanceChargesListener.UseCase
             {
                 var assetId = dwellingsListResult.FirstOrDefault(x => x.Id == propertyCharge.TargetId)?.AssetId;
 
-                _logger.LogInformation($"Asset Id: {assetId}");
-
-                // TODO FK: Due to assets information is not synced with production, assign default assetId to bypass it on dev and staging. Will be removed after test.
-                if (assetId == null) assetId = fileResponse.FirstOrDefault()?.PropertyReferenceNumber;
-
                 var estimateActualCharge = fileResponse.FirstOrDefault(x =>
                     x.PropertyReferenceNumber == assetId);
+
+                // TODO FK: Due to assets information is not synced with production, assign default assetId to bypass it on dev and staging. Will be removed after test.
+                if (estimateActualCharge == null)
+                {
+                    _logger.LogInformation($"Target Id: {propertyCharge.TargetId}");
+                    _logger.LogInformation($"Asset Id: {assetId}");
+                    assetId = fileResponse.FirstOrDefault()?.PropertyReferenceNumber;
+
+                    estimateActualCharge = fileResponse.FirstOrDefault(x =>
+                        x.PropertyReferenceNumber == assetId);
+                }
 
                 if (estimateActualCharge == null)
                     throw new Exception("Cannot locate the asset on estimate file");
 
                 // Update the charges value 
                 var tenureData = UpdateEstimateActualCharge(estimateActualCharge, propertyCharge.DetailedCharges);
+
+                var propertyTotal = propertyCharge.DetailedCharges.Where(x => x.ChargeType == ChargeType.Property).Sum(x => x.Amount);
+                var estateTotal = propertyCharge.DetailedCharges.Where(x => x.ChargeType == ChargeType.Estate).Sum(x => x.Amount);
+                var blockTotal = propertyCharge.DetailedCharges.Where(x => x.ChargeType == ChargeType.Block).Sum(x => x.Amount);
+                var totalCharge = propertyCharge.DetailedCharges.Sum(x => x.Amount);
 
                 builder.AppendLine(
                     $"{propertyCharge.Id}," +
@@ -121,7 +132,10 @@ namespace FinanceChargesListener.UseCase
                     $"{tenureData?.AddressLine2}," +
                     $"{tenureData?.AddressLine3}," +
                     $"{tenureData?.AddressLine4}," +
-                    $"{tenureData?.TotalCharge}," +
+                    $"{propertyTotal}," +
+                    $"{blockTotal}," +
+                    $"{estateTotal}," +
+                    $"{totalCharge}," +
                     $"{tenureData?.BlockCCTVMaintenanceAndMonitoring}," +
                     $"{tenureData?.BlockCleaning}," +
                     $"{tenureData?.BlockElectricity}," +
