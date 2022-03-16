@@ -163,7 +163,7 @@ namespace FinanceChargesListener.Gateway.Services
 
             using (var stream = formFile.OpenReadStream())
             {
-                var tagSet = new List<Tag> { new Tag { Key = "fileType", Value = "Print Room" } };
+                var tagSet = new List<Tag> { new Tag { Key = "fileType", Value = "PrintRoom" } };
                 var putRequest = new PutObjectRequest
                 {
                     Key = location,
