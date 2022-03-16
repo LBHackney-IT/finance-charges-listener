@@ -161,7 +161,7 @@ namespace FinanceChargesListener.UseCase
 
             var csvFileStream = new MemoryStream(Encoding.UTF8.GetBytes(builder.ToString()));
 
-            var fileName = $"Property Charges{DateTime.Now:yyyyMMddHHmmssfff}.csv";
+            var fileName = $"Property Charges {DateTime.Now:yyyyMMddHHmmssfff}.csv";
             var formFile = new FormFile(csvFileStream, 0, csvFileStream.Length, "chargesFile", fileName);
 
             await _awsS3FileService.UploadPrintRoomFile(formFile, formFile.FileName).ConfigureAwait(false);
