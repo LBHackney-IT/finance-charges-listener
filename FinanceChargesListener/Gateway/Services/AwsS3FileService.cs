@@ -163,13 +163,15 @@ namespace FinanceChargesListener.Gateway.Services
 
             using (var stream = formFile.OpenReadStream())
             {
+                var tagSet = new List<Tag> { new Tag { Key = "fileType", Value = "PrintRoom" } };
                 var putRequest = new PutObjectRequest
                 {
                     Key = location,
                     BucketName = bucketName,
                     InputStream = stream,
                     AutoCloseStream = true,
-                    ContentType = "text/csv"
+                    ContentType = "text/csv",
+                    TagSet = tagSet
                 };
                 try
                 {
