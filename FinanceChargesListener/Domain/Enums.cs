@@ -20,7 +20,8 @@ namespace FinanceChargesListener.Domain
     public enum ChargeFrequency
     {
         Monthly,
-        Weekly
+        Weekly,
+        Yearly
     }
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
