@@ -19,7 +19,7 @@ namespace FinanceChargesListener.UseCase.Utility
                 ChargeType = chargeType,
                 Frequency = chargeGroup == ChargeGroup.Tenants
                             ? ChargeFrequency.Weekly.ToString()
-                            : ChargeFrequency.Monthly.ToString(),
+                            : ChargeFrequency.Yearly.ToString(),
                 StartDate = Helper.GetFirstMondayForApril(chargeYear),
                 EndDate = Helper.GetFirstMondayForApril(chargeYear + 1).AddDays(-1)
             };
