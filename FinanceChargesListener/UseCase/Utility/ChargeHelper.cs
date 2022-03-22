@@ -32,20 +32,20 @@ namespace FinanceChargesListener.UseCase.Utility
                 case "Estate Cleaning":
                 case "Estate Repairs":
                 case "Estate Electricity":
-                case "Roads, footpaths and drainage":
-                case "CCTV Maintenance":
+                case "Estate Roads Footpaths and Drainage":
+                case "Estate CCTV Maintenance and Monitoring":
                 case "Grounds Maintenance":
                     return ChargeType.Estate;
                 case "Block Cleaning":
                 case "Block Repairs":
                 case "Block Electricity":
-                case "Communal Door Entry Maintenance":
                 case "Lift Maintenance":
-                case "Communal TV aerial Maintenance":
+                case "Communal TV Aerial Maintenance":
                 case "Heating/Hotwater Maintenance":
                 case "Heating/Hotwater Standing Charge":
                 case "Heating/Hotwater Energy":
-                case "Block CCTV Maintenance":
+                case "Block CCTV Maintenance and Monitoring":
+                case "Door Entry":
                 case "Concierge Service":
                     return ChargeType.Block;
                 default:
