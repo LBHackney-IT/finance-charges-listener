@@ -99,8 +99,7 @@ jobs:
       - run:
           name: Run formatter check
           command: ./dotnet-format-local/dotnet-format --check
-  build-and-test:
-    context: SonarCloud    
+  build-and-test:    
     executor: docker-python
     steps:
       - checkout
@@ -165,6 +164,7 @@ workflows:
     jobs:
       - check-code-formatting
       - build-and-test
+          context: SonarCloud      
   #    - assume-role-development:
   #        context: api-assume-role-housing-development-context
   #        requires:
