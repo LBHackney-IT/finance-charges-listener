@@ -21,11 +21,11 @@
     <PackageReference Include="AWSSDK.S3" Version="3.7.7.19" />
     <PackageReference Include="AWSXRayRecorder.Handlers.AwsSdk" Version="2.8.3" />
     <PackageReference Include="ExcelDataReader" Version="3.6.0" />
-    <PackageReference Include="Hackney.Core.DynamoDb" Version="1.30.0" />
+    <PackageReference Include="Hackney.Core.DynamoDb" Version="1.79.0" />
     <PackageReference Include="Hackney.Core.Logging" Version="1.30.0" />
     <PackageReference Include="Hackney.Shared.HousingSearch" Version="0.5.0" />
     <PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="5.2.7" />
-    <PackageReference Include="Hackney.Shared.Asset" Version="0.7.0" />
+    <PackageReference Include="Hackney.Shared.Asset" Version="0.30.0" />
     <PackageReference Include="Microsoft.AspNetCore.JsonPatch" Version="6.0.8" />
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="6.0.0">
       <PrivateAssets>all</PrivateAssets>
