@@ -33,7 +33,7 @@ namespace FinanceChargesListener.UseCase.Utility
             {
                 if (asset.AssetCharacteristics != null)
                 {
-                    var scFactor = GetScFactor(asset.AssetCharacteristics.NumberOfBedrooms);
+                    var scFactor = GetScFactor(asset.AssetCharacteristics.NumberOfBedrooms ?? 0);
                     calculatedList.Add(asset.Id, scFactor);
                 }
             }
