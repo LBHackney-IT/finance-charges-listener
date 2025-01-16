@@ -187,10 +187,16 @@ workflows:
     jobs:
       - check-code-formatting:
           context: api-nuget-token-context
+          filters:
+            branches:
+              only: development
       - build-and-test:
           context:
             - api-nuget-token-context
             - SonarCloud
+          filters:
+            branches:
+              only: development
       - assume-role-development:
           context: api-assume-role-housing-development-context
           requires:
