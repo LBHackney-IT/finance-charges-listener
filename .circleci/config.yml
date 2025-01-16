@@ -188,9 +188,9 @@ workflows:
       - check-code-formatting:
           context: api-nuget-token-context
       - build-and-test:
-          context: 
+          context:
             - api-nuget-token-context
-            - SonarCloud           
+            - SonarCloud
       - assume-role-development:
           context: api-assume-role-housing-development-context
           requires:
@@ -220,9 +220,9 @@ workflows:
             branches:
               only: master
       - build-and-test:
-          context: 
+          context:
             - api-nuget-token-context
-            - SonarCloud           
+            - SonarCloud
           filters:
             branches:
               only: master
