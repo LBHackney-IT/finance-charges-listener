@@ -183,6 +183,24 @@ jobs:
           stage: "production"
 
 workflows:
+  feature:
+    jobs:
+      - check-code-formatting:
+          context: api-nuget-token-context
+          filters:
+            branches:
+              ignore:
+                - development
+                - master
+      - build-and-test:
+          context: 
+            - api-nuget-token-context
+            - SonarCloud
+          filters:
+            branches:
+              ignore:
+                - development
+                - master
   check-and-deploy-development:
     jobs:
       - check-code-formatting:
