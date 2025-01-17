@@ -1,7 +1,7 @@
 service: finance-charges-listener
 provider:
   name: aws
-  runtime: dotnet6
+  runtime: dotnet8
   memorySize: 3008
   timeout: 900
   tracing:
