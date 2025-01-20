@@ -1,9 +1,8 @@
 version: 2.1
 
 orbs:
-  aws-ecr: circleci/aws-ecr@3.0.0
-  aws-cli: circleci/aws-cli@0.1.9
   aws_assume_role: lbh-hackit/aws_assume_role@0.1.0
+  node: circleci/node@6.3.0
 
 executors:
   docker-python:
@@ -14,7 +13,7 @@ executors:
       - image: "hashicorp/terraform:light"
   docker-dotnet:
     docker:
-      - image: mcr.microsoft.com/dotnet/sdk:6.0
+      - image: mcr.microsoft.com/dotnet/sdk:8.0
 
 references:
   workspace_root: &workspace_root "~"
@@ -57,24 +56,31 @@ commands:
           command: |
             cd ./terraform/<<parameters.environment>>/
             terraform apply -auto-approve
+  preview-terraform:
+    description: "Preview terraform configuration changes"
+    parameters:
+      environment:
+        type: string
+    steps:
+      - *attach_workspace
+      - checkout
+      - run:
+          command: |
+            cd ./terraform/<<parameters.environment>>/
+            terraform get -update=true
+            terraform init
+            terraform plan
+          name: preview terraform
   deploy-lambda:
     description: "Deploys via Serverless"
     parameters:
       stage:
         type: string
-
     steps:
       - *attach_workspace
       - checkout
       - setup_remote_docker
-      - run:
-          name: Install Node.js
-          command: |
-            curl -sL https://deb.nodesource.com/setup_14.x | bash -
-            apt-get update && apt-get install -y nodejs
-      - run:
-          name: Install serverless CLI
-          command: npm i -g serverless
+      - node/install
       - run:
           name: Build lambda
           command: |
@@ -85,7 +91,7 @@ commands:
           name: Deploy lambda
           command: |
             cd ./FinanceChargesListener/
-            sls deploy --stage <<parameters.stage>> --conceal
+            npx --yes serverless deploy --stage <<parameters.stage>> --conceal
 
 jobs:
   check-code-formatting:
@@ -139,6 +145,21 @@ jobs:
     steps:
       - terraform-init-then-apply:
           environment: "production"
+  preview-development-terraform:
+    executor: docker-terraform
+    steps:
+      - preview-terraform:
+          environment: "development"
+  preview-staging-terraform:
+    executor: docker-terraform
+    steps:
+      - preview-terraform:
+          environment: "staging"
+  preview-production-terraform:
+    executor: docker-terraform
+    steps:
+      - preview-terraform:
+          environment: "production"
   deploy-to-development:
     executor: docker-dotnet
     steps:
@@ -156,14 +177,83 @@ jobs:
           stage: "production"
 
 workflows:
+  feature:
+    jobs:
+      - check-code-formatting:
+          context: api-nuget-token-context
+          filters:
+            branches:
+              ignore:
+                - development
+                - master
+      - build-and-test:
+          context: 
+            - api-nuget-token-context
+            - SonarCloud
+          filters:
+            branches:
+              ignore:
+                - development
+                - master
+      - assume-role-development:
+          context: api-assume-role-housing-development-context
+          filters:
+            branches:
+              ignore:
+                - development
+                - master
+      - preview-development-terraform:
+          requires:
+            - assume-role-development
+          filters:
+            branches:
+              ignore:
+                - development
+                - master
+      - assume-role-staging:
+          context: api-assume-role-housing-staging-context
+          filters:
+            branches:
+              ignore:
+                - development
+                - master
+      - preview-staging-terraform:
+          requires:
+            - assume-role-staging
+          filters:
+            branches:
+              ignore:
+                - development
+                - master
+      - assume-role-production:
+          context: api-assume-role-housing-production-context
+          filters:
+            branches:
+              ignore:
+                - development
+                - master
+      - preview-production-terraform:
+          requires:
+            - assume-role-production
+          filters:
+            branches:
+              ignore:
+                - development
+                - master
   check-and-deploy-development:
     jobs:
       - check-code-formatting:
           context: api-nuget-token-context
+          filters:
+            branches:
+              only: development
       - build-and-test:
-          context: 
+          context:
             - api-nuget-token-context
-            - SonarCloud           
+            - SonarCloud
+          filters:
+            branches:
+              only: development
       - assume-role-development:
           context: api-assume-role-housing-development-context
           requires:
@@ -179,7 +269,9 @@ workflows:
             branches:
               only: development
       - deploy-to-development:
-          context: api-nuget-token-context
+          context:
+            - api-nuget-token-context
+            - "Serverless Framework"
           requires:
             - terraform-init-and-apply-to-development
           filters:
@@ -193,9 +285,9 @@ workflows:
             branches:
               only: master
       - build-and-test:
-          context: 
+          context:
             - api-nuget-token-context
-            - SonarCloud           
+            - SonarCloud
           filters:
             branches:
               only: master
@@ -213,7 +305,9 @@ workflows:
             branches:
               only: master
       - deploy-to-staging:
-          context: api-nuget-token-context
+          context:
+            - api-nuget-token-context
+            - "Serverless Framework"
           requires:
             - terraform-init-and-apply-to-staging
           filters:
@@ -248,7 +342,9 @@ workflows:
             branches:
               only: master
       - deploy-to-production:
-          context: api-nuget-token-context
+          context:
+            - api-nuget-token-context
+            - "Serverless Framework"
           requires:
             - permit-production-release
             - terraform-init-and-apply-to-production
