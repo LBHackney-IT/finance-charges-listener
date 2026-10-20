@@ -1,165 +1,180 @@
-# LBH Base Listener
+# Finance Charges Listener
 
-Base Listener is a boilerplate template application for creating for new Listener applications for LBH
+The Finance Charges Listener is the London Borough of Hackney (LBH) **MTFH finance** component that keeps
+dwelling/block/estate **charges** in sync with the assets and tenancies held in the platform's other services.
+
+It is an **AWS Lambda** function triggered by a **FIFO SQS queue**. It receives SNS-style domain events
+published by the charges APIs, applies the corresponding charge changes in **DynamoDB**, and pushes the
+resulting summaries back to the **Financial Summary API**. It also ingests the finance team's Estimate/Actual
+spreadsheets from **S3** and produces the print-room CSV output.
 
 ## Stack
 
-- .NET Core as a web framework.
-- xUnit as a test framework.
+- **.NET 10** (`net10.0`) targeting the AWS Lambda managed runtime `dotnet10`.
+- **Amazon.Lambda.SQSEvents** entry point (`Microsoft.NET.Sdk` class library published as a Lambda).
+- **DynamoDB** as the datastore (via `Hackney.Core.DynamoDb` / `AWSSDK.DynamoDBv2`).
+- **Amazon S3** for spreadsheet input/output, **SNS** for step chaining, **SQS** for the trigger.
+- **ExcelDataReader** for `.xls`/`.xlsx` parsing, **Newtonsoft.Json** for domain (de)serialisation.
+- **X-Ray** for tracing, **Serilog**/**Microsoft.Extensions.Logging** for logging.
+- **xUnit** + **FluentAssertions** + **Moq** + **AutoFixture** for tests.
 
-## Contributing
+## How it works
 
-### Setup
+The Lambda handler is `FinanceChargesListener::FinanceChargesListener.ChargesListener::FunctionHandler`.
+It receives an `SQSEvent`, deserialises each record body into an `EntityEventSns` envelope and dispatches on
+`EventType`. Messages are processed sequentially.
 
-1. Install [Docker][docker-download].
-2. Install [AWS CLI][AWS-CLI].
-3. Clone this repository.
-4. Rename the initial template.
-5. Open it in your IDE.
+| `EventType` | Use case | Effect |
+| --- | --- | --- |
+| `DwellingChargeUpdatedEvent` | `UpdateChargesUseCase` | Applies `DetailedChargeChange.DifferenceAmount` to the parent-asset charges, then updates the Financial Summary totals. |
+| `HeadOfChargeApplyEvent` | `ApplyHeadOfChargeUseCase` | Filters dwellings by tenure and applies head-of-charge rules (charge-name switch, tenant/leaseholder apportionment). |
+| `FileUploadEvent` | `EstimateActualFileProcessUseCase` | Runs the 8-step Estimate/Actual spreadsheet import pipeline. |
+| `GeneratePropertyCharges` | `GeneratePropertyChargesFileUseCase` | Selects the newest tagged Estimate/Actual spreadsheet, rebuilds per-property amounts and writes the print-room CSV. |
+| *(anything else)* | — | Throws `ArgumentException`. |
 
-### Renaming
+Any handler exception is re-thrown so AWS retries the message and, after `maxReceiveCount` (3), moves it to
+the dead-letter queue.
 
-The renaming of `FinanceChargesListener` into `SomethingElseListener` can be done by running a Renamer powershell script. To do so:
-1. Open the powershell and navigate to this directory's root.
-2. Run the script using the following command:
-```
-.\Renamer.ps1 -name SomethingElseListener -alternateName something-else-listener
-```
+### Estimate/Actual spreadsheet pipeline
 
-The `name` value is the name of the Listener and will be used is the Project names.
-The `alternateName` value is the lower case name used in docker compose and for various behind-the-scenes file names.
+Each step publishes the next step back onto the same queue via SNS, so the pipeline is resumable across
+Lambda invocations:
 
-If your ***script execution policy*** prevents you from running the script, you can temporarily ***bypass*** that with:
-```
-powershell -noprofile -ExecutionPolicy Bypass -file .\Renamer.ps1 -name SomethingElseListener -alternateName something-else-listener
-```
+1. Scan and count existing leaseholder charges for the year/group/sub-group.
+2. Delete the existing charges in paginated batches.
+3. Map UH numeric property references to GUID asset ids using the Housing Search API.
+4. Write dwelling charges.
+5. Write block charges.
+6. Write estate charges and the Hackney total.
+7. Write block asset summaries to the Financial Summary API.
+8. Write estate and Hackney summary totals, then tag the S3 object `status=Processed` (or `status=Failed` on error).
 
-Or you can change your execution policy, prior to running the script, permanently with _(this disables security so, be cautious)_:
-```
-Set-ExecutionPolicy Unrestricted
-```
+Spreadsheets are read from header row 0; column index 19 encodes the charge year (`20` + two digits) and the
+group (third character `E`/`A` → Estimate/Actual). Data columns are hard-coded indices 0–39.
 
-After the renaming is done, the ***script will ask you if you want to delete it as well***, as it's useless now - It's your choice.
+**Known limitation:** the pipeline keeps cross-invocation `static List<>` state, so it assumes a warm,
+single-concurrency Lambda.
 
-#### On OSX
+## Data sources and external dependencies
 
-Use Docker to run this script on Macs:
-```
-docker run -it -v `pwd`:/app mcr.microsoft.com/powershell
-```
+| Dependency | Detail |
+| --- | --- |
+| DynamoDB table `Charges` | `target_id` (HASH) + `id` (RANGE); `target_type`, `charge_group`, `charge_sub_group`, `charge_year`, `detailed_charges`, audit fields. |
+| DynamoDB table `Assets` | Read-only lookups of asset data. |
+| SQS `chargesqueue.fifo` | Trigger queue (FIFO, content-based dedup, 900 s visibility, KMS-encrypted). ARN published to SSM as `/sqs-queue/{stage}/charges/arn`. |
+| SQS `chargesdeadletterqueue.fifo` | Dead-letter queue, `maxReceiveCount` 3. |
+| SNS topic | `/sns-topic/{stage}/charges/arn` — both the event source and the target this Lambda publishes step-completion messages to. |
+| S3 `lbh-charges-api-bucket-{development\|staging\|production}` | `uploads/` for incoming spreadsheets, `printoutput/` for generated CSV. Object tags `status`, `year`, `valuesType`, `fileType`. |
+| S3 `mtfh-finance-printroom-{stage}` | `PRINT_ROOM_BUCKET_NAME` is passed to the function and granted in IAM, but is **not read in code** — print-room output currently goes to the charges bucket. |
+| Housing Search API | `GET api/v1/search/assets/all` — resolves property references to asset ids. |
+| Asset Information API | `GET api/v1/assets/assetId/{id}` and `GET api/v1/assets/{id}`. |
+| Financial Summary API | `GET`/`PATCH api/v1/asset-summary/estimates/{assetId}`, `POST api/v1/asset-summary`, `POST api/v1/asset-summary/process-batch`. 5-minute client timeout. |
+| AWS X-Ray | Distributed tracing. |
+| Elasticsearch | **Not used directly.** NEST is only present transitively; Elasticsearch is reached over HTTP through the Housing Search API. |
 
-#### On *nix
+## Configuration
 
-Run the renamer.sh bash script from the project root:
-```
-./rename.sh MyApiName
-```
-Ideally you should provide a script argument in PascalCase as in the example. The script will rename all instances of base api without changing the original casing.
+All values are supplied per stage from SSM Parameter Store in `FinanceChargesListener/serverless.yml`;
+local values live in `appsettings.LocalDevelopment.json`.
 
-### Development
+| Variable | Purpose |
+| --- | --- |
+| `ENVIRONMENT` | Environment name (`LocalDevelopment`, stage name). |
+| `CHARGES_BUCKET_NAME` | S3 bucket for spreadsheet input/output. |
+| `CHARGES_SNS_ARN` | SNS topic for events and step chaining. |
+| `HOUSING_SEARCH_API_URL` / `HOUSING_SEARCH_API_TOKEN` | Housing Search API client. |
+| `ASSET_INFORMATION_API_URL` / `ASSET_INFORMATION_API_TOKEN` | Asset Information API client. |
+| `FINANCIAL_SUMMARY_API_URL` / `FINANCIAL_SUMMARY_API_TOKEN` | Financial Summary API client. |
+| `PRINT_RENT_STATEMENTS_HEADER` | Header row for the generated print-room CSV. |
+| `DynamoDb_LocalMode`, `DynamoDb_LocalServiceUrl` | Local DynamoDB (`true`, `http://localhost:8000`). |
 
-To serve the application, run it using your IDE of choice, we use Visual Studio CE and JetBrains Rider on Mac.
+AWS region is `eu-west-2` throughout.
 
-**Note**
-When running locally the appropriate database conneciton details are still needed.
+## Setup
 
-##### DynamoDb
-To use a local instance of DynamoDb, this will need to be installed. This is most easily done using [Docker](https://www.docker.com/products/docker-desktop).
-Run the following command, specifying the local path where you want the container's shared volume to be stored.
-```
-docker run --name dynamodb-local -p 8000:8000 -v <PUT YOUR LOCAL PATH HERE>:/data/ amazon/dynamodb-local -jar DynamoDBLocal.jar -sharedDb -dbPath /data
-```
+### Prerequisites
 
-If you would like to see what is in your local DynamoDb instance using a simple gui, then [this admin tool](https://github.com/aaronshaf/dynamodb-admin) can do that.
+1. [Docker][docker-download] with the **`docker compose`** v2 plugin (the v1 `docker-compose` binary is not used).
+2. The .NET 10 SDK (only needed for IDE work — build and test run in Docker).
+3. A **`LBHPACKAGESTOKEN`** with `read:packages` access to the `LBHackney-IT` GitHub Packages NuGet feed.
+   The `Hackney.*` packages this service depends on are not on nuget.org. Export it before running any
+   Docker target, for example:
+   ```sh
+   export LBHPACKAGESTOKEN=<token>
+   ```
+4. Optionally copy [`.env.sample`](.env.sample) to `.env` and set `LBHPACKAGESTOKEN` there instead of
+   exporting it — `docker compose` reads `.env` for the values referenced in `docker-compose.yml`. The file
+   also lists every environment variable the function reads at runtime; those are **not** loaded from `.env`,
+   so export them (or add them to the compose service) if you need to override the defaults.
 
-The application can also be served locally using docker:
-1.  Add you security credentials to AWS CLI.
+### Clone and build
+
 ```sh
-$ aws configure
+git clone git@github.com:LBHackney-IT/finance-charges-listener.git
+cd finance-charges-listener
+make build          # docker compose build finance-charges-listener
 ```
-2. Log into AWS ECR.
+
+### Run locally
+
 ```sh
-$ aws ecr get-login --no-include-email
-```
-3. Build and serve the application. It will be available in the port 3000.
-```sh
-$ make build && make serve
+make serve          # builds and starts the Lambda container on port 3000
+make shell          # bash inside the container
 ```
 
-### Release process
-
-We use a pull request workflow, where changes are made on a branch and approved by one or more other maintainers before the developer can merge into `master` branch.
-
-![Circle CI Workflow Example](docs/circle_ci_workflow.png)
-
-Then we have an automated six step deployment process, which runs in CircleCI.
-
-1. Automated tests (xUnit) are run to ensure the release is of good quality.
-2. The application is deployed to development automatically, where we check our latest changes work well.
-3. We manually confirm a staging deployment in the CircleCI workflow once we're happy with our changes in development.
-4. The application is deployed to staging.
-5. We manually confirm a production deployment in the CircleCI workflow once we're happy with our changes in staging.
-6. The application is deployed to production.
-
-Our staging and production environments are hosted by AWS. We would deploy to production per each feature/config merged into  `release`  branch.
-
-### Creating A PR
-
-To help with making changes to code easier to understand when being reviewed, we've added a PR template.
-When a new PR is created on a repo that uses this API template, the PR template will automatically fill in the `Open a pull request` description textbox.
-The PR author can edit and change the PR description using the template as a guide.
-
-## Static Code Analysis
-
-### Using [FxCop Analysers](https://www.nuget.org/packages/Microsoft.CodeAnalysis.FxCopAnalyzers)
-
-FxCop runs code analysis when the Solution is built.
-
-Both the API and Test projects have been set up to **treat all warnings from the code analysis as errors** and therefore, fail the build.
-
-However, we can select which errors to suppress by setting the severity of the responsible rule to none, e.g `dotnet_analyzer_diagnostic.<Category-or-RuleId>.severity = none`, within the `.editorconfig` file.
-Documentation on how to do this can be found [here](https://docs.microsoft.com/en-us/visualstudio/code-quality/use-roslyn-analyzers?view=vs-2019).
+A local DynamoDB instance is provided by the `dynamodb-database` service in `docker-compose.yml`
+(`amazon/dynamodb-local` on port 8000).
 
 ## Testing
 
-### Run the tests
-
 ```sh
-$ make test
+make test
 ```
 
-### Agreed Testing Approach
-- Use xUnit, FluentAssertions and Moq
-- Always follow a TDD approach
-- Tests should be independent of each other
-- Gateway tests should interact with a real test instance of the database
-- Test coverage should never go down. (See the [test project readme](FinanceChargesListener.Tests/readme.md#Run-coverage) for how to run a coverage check.)
-- All use cases should be covered by E2E tests
-- Optimise when test run speed starts to hinder development
-- Unit tests and E2E tests should run in CI
-- Test database schemas should match up with production database schema
-- Have integration tests which test from the DynamoDb database to API Gateway
+`make test` starts the local DynamoDB container, builds the test image
+(`FinanceChargesListener.Tests/Dockerfile`) and runs the xUnit suite inside it. The suite currently covers
+configuration/serialisation and exception handling; the E2E "story" classes are fixtures and step
+definitions rather than executed tests.
 
-## Data Migrations
-### A good data migration
-- Record failure logs
-- Automated
-- Reliable
-- As close to real time as possible
-- Observable monitoring in place
-- Should not affect any existing databases
+### Agreed testing approach
+
+- xUnit, FluentAssertions and Moq.
+- Follow a TDD approach; keep tests independent of each other.
+- Gateway tests interact with a real local DynamoDB instance.
+- Test coverage should not go down.
+- Unit and E2E tests run in CI.
+
+## Deployment
+
+CircleCI (`.circleci/config.yml`) gates deployment on a code-formatting check (`dotnet-format --check`), the
+Docker test suite and SonarCloud analysis, then deploys infrastructure with **Terraform** and the Lambda with
+the **Serverless Framework**. Changes are reviewed and approved on a branch before merging.
+
+**Stages and triggers:**
+
+- **Feature branches** (anything except `development` and `master`) — formatting, tests and Terraform **plan
+  previews** against development, staging and production. Nothing is applied or deployed.
+- **`development`** — formatting, tests, Terraform apply to development, then deployment to **development**.
+- **`master`** — formatting, tests, Terraform apply to staging and deployment to **staging**. Production
+  follows only after the `permit-production-terraform-release` and `permit-production-release` manual approvals.
+
+Note that the development deployment is driven by the `development` branch, and that this repository has **no
+pre-production stage**.
+
+**Packaging and runtime:**
+
+- `build.sh` installs `Amazon.Lambda.Tools` and runs
+  `dotnet lambda package --configuration release --framework net10.0 --output-package ./bin/release/net10.0/finance-charges-listener.zip`.
+  (`build.cmd` is the Windows equivalent for local use.)
+- The deploy job runs `npx --yes serverless deploy --stage <stage> --conceal`.
+- `serverless.yml` declares `runtime: dotnet10` and consumes that artifact. All scheduled invocations are
+  disabled by default — they are driven by the step functions and the `chargesqueue.fifo` trigger.
+- `aws-lambda-tools-defaults.json` holds the Visual Studio / `dotnet lambda` defaults (framework, runtime,
+  handler, memory, timeout).
 
 ## Contacts
 
-### Active Maintainers
-
-- **Selwyn Preston**, Lead Developer at London Borough of Hackney (selwyn.preston@hackney.gov.uk)
-- **Mirela Georgieva**, Lead Developer at London Borough of Hackney (mirela.georgieva@hackney.gov.uk)
-- **Matt Keyworth**, Lead Developer at London Borough of Hackney (matthew.keyworth@hackney.gov.uk)
-
-### Other Contacts
-
-- **Rashmi Shetty**, Product Owner at London Borough of Hackney (rashmi.shetty@hackney.gov.uk)
+**Housing product team** — [mmh-project-team@hackney.gov.uk](mailto:mmh-project-team@hackney.gov.uk)
 
 [docker-download]: https://www.docker.com/products/docker-desktop
 [AWS-CLI]: https://aws.amazon.com/cli/

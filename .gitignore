@@ -67,3 +67,6 @@ testresults/
 FinanceChargesListener/.lambda-test-tool/*
 *appsettings.Development.json
 *launchSettings.Development.json
+
+# Local environment file (contains secrets - use .env.sample as the template)
+.env
